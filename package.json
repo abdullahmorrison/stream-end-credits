@@ -1,0 +1,11 @@
+{
+  "name": "stream-end-credits",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End credits for a Twitch stream. Watches chat all stream, rolls everyone who subbed, gifted, raided or cheered when you switch to your ending scene. No backend and no login.",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.js",
+    "test": "node --test test/*.test.mjs"
+  }
+}
