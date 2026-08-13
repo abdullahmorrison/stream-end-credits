@@ -30,7 +30,10 @@ function settings() {
     speed: clampSpeed(speedEl.value),
     columns: parseInt(columnsEl.value, 10),
     backdrop: parseFloat(backdropEl.value),
-    firsts: firstsEl.checked,
+    // A select rather than a checkbox, so it carries the same weight as every other
+    // option here. A lone checkbox under a row of dropdowns reads as a footnote and
+    // gets scrolled past.
+    firsts: firstsEl.value === 'on',
   };
 }
 

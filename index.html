@@ -64,16 +64,6 @@
   .row > div { flex: 1 1 180px; }
   .row + .row { margin-top: 14px; }
 
-  .check {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    color: var(--text);
-    font-size: 15px;
-    margin: 0;
-  }
-  .check input { width: auto; accent-color: var(--accent); }
-
   .status { margin-top: 10px; font-size: 14px; color: var(--muted); min-height: 22px; }
   .status.ok { color: var(--good); }
   .status.warn { color: var(--warn); }
@@ -186,6 +176,8 @@
         <label for="title">Heading on the first card</label>
         <input type="text" id="title" placeholder="Thank you for watching" autocomplete="off">
       </div>
+    </div>
+    <div class="row">
       <div>
         <label for="speed">Scroll pace</label>
         <select id="speed">
@@ -194,8 +186,6 @@
           <option value="140">Quick</option>
         </select>
       </div>
-    </div>
-    <div class="row">
       <div>
         <label for="columns">Columns of names</label>
         <select id="columns">
@@ -205,6 +195,8 @@
           <option value="4">4</option>
         </select>
       </div>
+    </div>
+    <div class="row">
       <div>
         <label for="backdrop">Dim behind the credits</label>
         <select id="backdrop">
@@ -214,13 +206,12 @@
           <option value="1">Solid</option>
         </select>
       </div>
-    </div>
-    <div class="row">
       <div>
-        <label class="check">
-          <input type="checkbox" id="firsts">
-          Also credit people talking in your chat for the first time
-        </label>
+        <label for="firsts">First-time chatters</label>
+        <select id="firsts">
+          <option value="off" selected>Leave them out</option>
+          <option value="on">Credit them too</option>
+        </select>
       </div>
     </div>
   </div>
