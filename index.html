@@ -94,7 +94,41 @@
   button.ghost:hover { background: var(--panel-2); }
 
   ol { margin: 0; padding-left: 22px; }
-  ol li { margin-bottom: 9px; }
+  ol li { margin-bottom: 8px; }
+  ol li:last-child { margin-bottom: 0; }
+
+  /* Marks the one step people skip. */
+  .req {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 1px 8px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--warn);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* One fact per line, scannable without reading the whole line. */
+  ul.facts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  ul.facts li { position: relative; padding-left: 20px; font-size: 15px; }
+  ul.facts li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  ul.facts b { font-weight: 600; }
   kbd {
     background: var(--panel-2);
     border: 1px solid var(--line);
@@ -151,20 +185,20 @@
     <h1>Stream end credits</h1>
   </header>
   <p class="tagline">
-    Thank everyone who showed up, as film credits, at the end of your stream. No download,
-    no login, no account to connect.
+    Thank everyone who showed up, as film credits, at the end of your stream.
+    No download, no login, no account to connect.
   </p>
 
   <div class="card">
     <h2>1 · Your channel</h2>
-    <p class="help">The Twitch channel whose chat the overlay listens to.</p>
+    <p class="help">Whose chat to listen to.</p>
     <input type="text" id="channel" placeholder="yourchannel" spellcheck="false" autocomplete="off">
     <div class="status" id="channelStatus"></div>
   </div>
 
   <div class="card">
     <h2>2 · Options</h2>
-    <p class="help">Fine if you leave these alone.</p>
+    <p class="help">Fine to leave alone.</p>
     <div class="row">
       <div>
         <label for="title">Heading on the first card</label>
@@ -212,14 +246,14 @@
 
   <div class="card">
     <h2>3 · See it first</h2>
-    <p class="help">This is the real overlay, running on made-up names.</p>
+    <p class="help">The real overlay, on made-up names.</p>
     <div class="preview"><iframe id="preview" title="Overlay preview"></iframe></div>
     <button class="ghost" id="replay">Play it again</button>
   </div>
 
   <div class="card">
     <h2>4 · Your link</h2>
-    <p class="help">Copy this, then follow the steps below.</p>
+    <p class="help">Paste this into OBS below.</p>
     <div class="linkbox">
       <input type="text" id="link" readonly>
       <button id="copy">Copy link</button>
@@ -228,50 +262,51 @@
 
   <div class="card">
     <h2>5 · Add it to OBS</h2>
+    <p class="help">Six clicks. The fifth is the one people miss.</p>
     <ol>
-      <li>Switch to the scene you use at the <strong>end</strong> of your stream.</li>
-      <li>Under <strong>Sources</strong>, click <kbd>+</kbd> and choose <strong>Browser</strong>.</li>
-      <li>Give it a name (<em>End credits</em>) and click <strong>OK</strong>.</li>
-      <li>Paste your link into the <strong>URL</strong> box.</li>
-      <li>Set <strong>Width</strong> to <kbd>1920</kbd> and <strong>Height</strong> to <kbd>1080</kbd>.</li>
-      <li><strong>Untick “Shutdown source when not visible”</strong>, then click <strong>OK</strong>.</li>
+      <li>Open your <strong>ending scene</strong></li>
+      <li><strong>Sources</strong> → <kbd>+</kbd> → <strong>Browser</strong></li>
+      <li>Paste your link into <strong>URL</strong></li>
+      <li><strong>Width</strong> <kbd>1920</kbd> · <strong>Height</strong> <kbd>1080</kbd></li>
+      <li>
+        Untick <strong>“Shutdown source when not visible”</strong>
+        <span class="req">Required</span>
+      </li>
+      <li><strong>OK</strong></li>
     </ol>
-    <p class="note important" style="margin-top:16px">
-      That last step is the one that matters. The overlay collects names the whole time
-      it is loaded, so it has to keep running while you are on your other scenes. Leave
-      that box ticked and it only starts when you switch to the ending scene — then rolls
-      empty credits, because it was not there for any of the stream.
+    <p class="note important" style="margin-top:18px">
+      <b>Why step 5:</b> the overlay collects names while it is loaded. Leave that box
+      ticked and it only wakes up when you open the ending scene — too late to have seen
+      anything, so the credits roll empty.
     </p>
-    <p class="note" style="margin-top:16px">
-      Nothing else to do, and nothing to type. Switch to that scene at the end of your
-      stream and the credits roll. Switch away and they stop.
-      <br><br>
-      If you reload the source while the ending scene is already up, switch away and back
-      to start it — OBS reports scene <em>changes</em>, so a page that has just loaded has
-      no way to tell which scene is showing.
-    </p>
+  </div>
+
+  <div class="card">
+    <h2>6 · Then nothing</h2>
+    <ul class="facts">
+      <li><b>Switch to your ending scene</b> — the credits roll</li>
+      <li><b>Switch away</b> — they stop</li>
+      <li><b>Nothing to type.</b> No chat command, no button, no hotkey</li>
+      <li><b>Reloaded the source while that scene was already up?</b> Switch away and back</li>
+    </ul>
   </div>
 
   <div class="card">
     <h2>What gets credited</h2>
     <table>
       <tr><th>Section</th><th>Who</th></tr>
-      <tr><td>Raided by</td><td>Anyone who raided you, with how many they brought</td></tr>
-      <tr><td>New subscribers</td><td>New subs, and everyone who was gifted one</td></tr>
+      <tr><td>Raided by</td><td>Raiders, with how many they brought</td></tr>
+      <tr><td>New subscribers</td><td>New subs, and everyone gifted one</td></tr>
       <tr><td>Still here</td><td>Resubs, with their month count</td></tr>
       <tr><td>Gifted subs</td><td>Gifters, with how many they gave</td></tr>
       <tr><td>Cheered</td><td>Bits, added up per person</td></tr>
-      <tr><td>First time in chat</td><td>Only if you ticked it above</td></tr>
+      <tr><td>First time in chat</td><td>Only if you turned it on above</td></tr>
     </table>
-    <p class="note" style="margin-top:18px">
-      A section with nobody in it is left out, so a stream with no raids shows no
-      “Raided by” heading.
-      <br><br>
-      Follows are not on this list. They are the one thing Twitch keeps out of chat, and
-      reading them needs a login that expires every few hours — so the way you would find
-      out it had gone stale is empty credits at the end of a stream. Everything above
-      needs no login at all.
-    </p>
+    <ul class="facts" style="margin-top:18px">
+      <li><b>Empty sections are left out.</b> No raids, no “Raided by” heading</li>
+      <li><b>Follows are not included.</b> The one thing Twitch keeps out of chat — reading
+        them needs a login that expires every few hours</li>
+    </ul>
   </div>
 
 </div>
