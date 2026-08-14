@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stream end credits — set up your overlay</title>
+<title>Stream End Credits — set up your overlay</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   :root {
@@ -70,6 +70,15 @@
   .status.warn { color: var(--warn); }
 
   .linkbox { display: flex; gap: 10px; margin-top: 4px; }
+  .sharehead {
+    margin: 22px 0 4px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
   .linkbox input {
     font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 13px;
@@ -182,7 +191,7 @@
     <!-- The same file the browser tab uses, so the mark can never drift between the two
          places it appears. -->
     <img src="favicon.svg" alt="" width="46" height="46">
-    <h1>Stream end credits</h1>
+    <h1>Stream End Credits</h1>
   </header>
   <p class="tagline">
     Thank everyone who showed up, as film credits, at the end of your stream.
@@ -257,6 +266,16 @@
     <div class="linkbox">
       <input type="text" id="link" readonly>
       <button id="copy">Copy link</button>
+    </div>
+
+    <p class="sharehead">Setting someone else up?</p>
+    <p class="help" style="margin-bottom:10px">
+      Send them <em>this page</em> with your options already picked. They just change the
+      channel and copy.
+    </p>
+    <div class="linkbox">
+      <input type="text" id="share" readonly>
+      <button class="ghost" id="copyShare">Copy</button>
     </div>
   </div>
 

@@ -47,6 +47,6 @@ http
     });
   })
   .listen(PORT, () => {
-    console.log(`Stream end credits dev server: http://localhost:${PORT}`);
+    console.log(`Stream End Credits dev server: http://localhost:${PORT}`);
     console.log(`Overlay: http://localhost:${PORT}/credits.html?channel=tenzinniznet&demo=on&debug=on`);
   });

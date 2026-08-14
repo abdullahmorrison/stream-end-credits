@@ -23,7 +23,8 @@ const DEFAULTS = {
   duration: 0,
   columns: 3,
   // Everyone who said something for the first time. Off by default: on a big channel
-  // this category is longer than all the others put together.
+  // this category is longer than all the others put together. Turn it on with
+  // `firsts=on`, or hand someone a setup link that already has it on.
   firsts: false,
   sessionHours: 12,
   // Dim behind the credits, 0 = fully transparent. The overlay sits on an ending scene
@@ -45,8 +46,21 @@ function float(value, fallback, min, max) {
   return Math.min(max, Math.max(min, n));
 }
 
-function flag(value) {
-  return value === 'on' || value === '1' || value === 'true';
+const TRUTHY = /^(on|1|true|yes)$/i;
+const FALSY = /^(off|0|false|no)$/i;
+
+/**
+ * A switch that can be turned either way, because not every one of these defaults to off.
+ * `firsts` is on, so reading a missing param as false would quietly ignore the default,
+ * and `?firsts=off` has to actually mean off rather than "not the word on".
+ * Anything unrecognised falls back rather than guessing.
+ */
+function flag(value, fallback = false) {
+  if (value === null) return fallback;
+  const v = value.trim();
+  if (TRUTHY.test(v)) return true;
+  if (FALSY.test(v)) return false;
+  return fallback;
 }
 
 /**
@@ -90,13 +104,13 @@ export function readConfig(search = '') {
     speed: clampSpeed(q.get('speed')),
     duration: clampDuration(q.get('duration')),
     columns: int(q.get('columns'), DEFAULTS.columns, 1, 6),
-    firsts: flag(q.get('firsts')),
+    firsts: flag(q.get('firsts'), DEFAULTS.firsts),
     sessionHours: clampSessionHours(q.get('sessionHours')),
     backdrop: float(q.get('backdrop'), DEFAULTS.backdrop, 0, 1),
-    debug: flag(q.get('debug')),
+    debug: flag(q.get('debug'), DEFAULTS.debug),
     // Rolls a fake roster, so the reel can be watched in OBS without a stream's worth
     // of real events behind it.
-    demo: flag(q.get('demo')),
+    demo: flag(q.get('demo'), DEFAULTS.demo),
   };
 }
 

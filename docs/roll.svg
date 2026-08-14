@@ -31,7 +31,7 @@
                         values="0 360; 0 -1010" dur="18s" repeatCount="indefinite"/>
 
       <text x="320" y="64" font-size="27" font-weight="300" letter-spacing="6">THANK YOU FOR WATCHING</text>
-      <text x="320" y="108" font-size="27" font-weight="700" fill="#d3b8ff">tenzinniznet</text>
+      <text x="320" y="108" font-size="27" font-weight="700" fill="#d3b8ff">abdullahmorrison</text>
 
       <text x="320" y="196" font-size="13" font-weight="600" letter-spacing="4.6" fill="#b9a7d8">RAIDED BY</text>
       <text x="320" y="236" font-size="22" font-weight="500">kaylee <tspan fill="#ffffff" opacity="0.55" font-size="15" font-weight="600">142</tspan></text>

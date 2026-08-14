@@ -6,7 +6,7 @@
 // box here shows exactly what a 1920×1080 source will, and there is no second rendering
 // path to keep in step with the first.
 
-import { DEFAULTS, normalizeChannel, clampSpeed } from './config.js';
+import { DEFAULTS, readConfig, normalizeChannel, clampSpeed } from './config.js';
 import { TwitchChat } from './irc.js';
 
 const $ = (id) => document.getElementById(id);
@@ -50,7 +50,9 @@ function overlayUrl(extra = {}) {
   if (s.speed !== DEFAULTS.speed) url.searchParams.set('speed', String(s.speed));
   if (s.columns !== DEFAULTS.columns) url.searchParams.set('columns', String(s.columns));
   if (s.backdrop !== DEFAULTS.backdrop) url.searchParams.set('backdrop', String(s.backdrop));
-  if (s.firsts) url.searchParams.set('firsts', 'on');
+  // Written either way rather than only when on, since the default is now on and leaving
+  // it out would mean "on" instead of what was picked.
+  if (s.firsts !== DEFAULTS.firsts) url.searchParams.set('firsts', s.firsts ? 'on' : 'off');
 
   for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, value);
   return url.toString();
@@ -58,6 +60,7 @@ function overlayUrl(extra = {}) {
 
 function refresh() {
   linkEl.value = overlayUrl();
+  refreshShare();
 }
 
 function replay() {
@@ -141,13 +144,62 @@ for (const el of [channelEl, titleEl]) {
 titleEl.addEventListener('change', replay);
 channelEl.addEventListener('change', checkChannel);
 
-// This page takes the same `channel` param as the overlay, so it can be handed to a
-// streamer with their name already in the box -- setting it up for someone else is
-// otherwise a spelling test they have to pass before anything works.
-const named = normalizeChannel(new URLSearchParams(window.location.search).get('channel'));
-if (named) channelEl.value = named;
+// --- prefill -------------------------------------------------------------
+//
+// This page reads exactly the params the overlay does, through the same parser, so a
+// setup link can arrive with every option already chosen. Hand someone
+// `?channel=theirs&firsts=on&columns=2` and they land on a page that is already right --
+// no instructions to follow, nothing for them to get wrong, and the copy button gives
+// them a working overlay link on the first click.
+//
+// Reusing readConfig rather than reading params here is the point: if the two ever
+// disagreed, a link would preview one thing and install another.
 
-titleEl.value = DEFAULTS.title;
+/**
+ * Pick `value` in a dropdown, adding an option for it when it is not one of the offered
+ * ones. A link carrying `speed=115` should survive the round trip rather than silently
+ * snapping to whichever preset happens to be nearest.
+ */
+function selectValue(el, value) {
+  const wanted = String(value);
+  if (![...el.options].some((o) => o.value === wanted)) {
+    el.add(new Option(`${wanted} (from link)`, wanted));
+  }
+  el.value = wanted;
+}
+
+const incoming = readConfig(window.location.search);
+
+if (incoming.channel) channelEl.value = incoming.channel;
+titleEl.value = incoming.title;
+selectValue(speedEl, incoming.speed);
+selectValue(columnsEl, incoming.columns);
+selectValue(backdropEl, incoming.backdrop);
+selectValue(firstsEl, incoming.firsts ? 'on' : 'off');
+
+// --- share ---------------------------------------------------------------
+
+const shareEl = $('share');
+
+function refreshShare() {
+  const url = new URL(window.location.pathname, window.location.href);
+  const overlay = new URL(overlayUrl());
+  for (const [key, value] of overlay.searchParams) url.searchParams.set(key, value);
+  shareEl.value = url.toString();
+}
+
+$('copyShare').addEventListener('click', async () => {
+  shareEl.select();
+  try {
+    await navigator.clipboard.writeText(shareEl.value);
+  } catch {
+    document.execCommand('copy');
+  }
+  const btn = $('copyShare');
+  btn.textContent = 'Copied';
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+});
+
 refresh();
 replay();
 checkChannel();

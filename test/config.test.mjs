@@ -75,13 +75,27 @@ test('readConfig', async (t) => {
     assert.deepEqual(readConfig(''), { ...DEFAULTS, channel: '' });
   });
 
-  await t.test('flags take on, 1 and true', () => {
-    for (const value of ['on', '1', 'true']) {
+  await t.test('flags take on, 1, true and yes', () => {
+    for (const value of ['on', '1', 'true', 'yes', 'ON']) {
       assert.equal(readConfig(`?debug=${value}`).debug, true, value);
     }
-    for (const value of ['off', '0', 'no', '']) {
+    for (const value of ['off', '0', 'no', 'false', '']) {
       assert.equal(readConfig(`?debug=${value}`).debug, false, value);
     }
+  });
+
+  // The setup page hands out links carrying these, so a flag has to be able to say off
+  // as clearly as it says on -- a shared link that silently drops the choice would look
+  // exactly like a link that worked.
+  await t.test('a flag can be turned off explicitly, not only left out', () => {
+    assert.equal(readConfig('?firsts=off').firsts, false);
+    assert.equal(readConfig('?firsts=on').firsts, true);
+    assert.equal(readConfig('').firsts, DEFAULTS.firsts);
+  });
+
+  await t.test('an unreadable flag falls back rather than guessing', () => {
+    assert.equal(readConfig('?firsts=maybe').firsts, DEFAULTS.firsts);
+    assert.equal(readConfig('?debug=sure').debug, DEFAULTS.debug);
   });
 
   await t.test('columns stay within what fits on a 16:9 source', () => {
