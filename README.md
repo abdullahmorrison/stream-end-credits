@@ -3,7 +3,7 @@
 Thank everyone who showed up, as film credits, at the end of your stream.
 
 <p align="center">
-  <img src="docs/roll.svg" alt="The credits rolling" width="640">
+  <img src="docs/credits-roll.svg" alt="The credits rolling" width="640">
 </p>
 
 The overlay watches your chat all stream and collects everyone who subscribed, gifted a
