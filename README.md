@@ -2,7 +2,9 @@
 
 Thank everyone who showed up, as film credits, at the end of your stream.
 
-![The credits rolling](docs/roll.svg)
+<p align="center">
+  <img src="docs/roll.svg" alt="The credits rolling" width="640">
+</p>
 
 The overlay watches your chat all stream and collects everyone who subscribed, gifted a
 sub, raided you or cheered. Switch to your ending scene and the credits roll. Switch away
