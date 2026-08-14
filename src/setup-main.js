@@ -63,7 +63,6 @@ function overlayUrl(extra = {}) {
 
 function refresh() {
   linkEl.value = overlayUrl();
-  refreshShare();
 }
 
 function replay() {
@@ -180,29 +179,6 @@ selectValue(columnsEl, incoming.columns);
 selectValue(alignEl, incoming.align);
 selectValue(backdropEl, incoming.backdrop);
 selectValue(firstsEl, incoming.firsts ? 'on' : 'off');
-
-// --- share ---------------------------------------------------------------
-
-const shareEl = $('share');
-
-function refreshShare() {
-  const url = new URL(window.location.pathname, window.location.href);
-  const overlay = new URL(overlayUrl());
-  for (const [key, value] of overlay.searchParams) url.searchParams.set(key, value);
-  shareEl.value = url.toString();
-}
-
-$('copyShare').addEventListener('click', async () => {
-  shareEl.select();
-  try {
-    await navigator.clipboard.writeText(shareEl.value);
-  } catch {
-    document.execCommand('copy');
-  }
-  const btn = $('copyShare');
-  btn.textContent = 'Copied';
-  setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
-});
 
 refresh();
 replay();

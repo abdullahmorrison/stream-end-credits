@@ -23,14 +23,9 @@ Add one **Browser Source** to your ending scene:
 https://abdullahmorrison.github.io/stream-end-credits/credits.html?channel=YOUR_CHANNEL
 ```
 
-Or pick how it looks on the [setup page](https://abdullahmorrison.github.io/stream-end-credits/).
-
-**Setting someone else up?** The setup page reads the same params as the overlay, so send
-it with the options already chosen and they only have to change the channel:
-
-```
-https://abdullahmorrison.github.io/stream-end-credits/?channel=THEIR_CHANNEL&firsts=on&columns=2
-```
+Or pick how it looks on the [setup page](https://abdullahmorrison.github.io/stream-end-credits/),
+which reads the same params as the overlay — `?channel=you&firsts=on&columns=2` opens it
+with those already set.
 
 **Step 4 matters.** The overlay only collects while it is loaded. Tick that box and it
 starts when you switch to the ending scene — after the stream it is meant to be thanking —

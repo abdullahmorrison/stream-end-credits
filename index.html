@@ -70,15 +70,6 @@
   .status.warn { color: var(--warn); }
 
   .linkbox { display: flex; gap: 10px; margin-top: 4px; }
-  .sharehead {
-    margin: 22px 0 4px;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
   .linkbox input {
     font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 13px;
@@ -274,16 +265,6 @@
     <div class="linkbox">
       <input type="text" id="link" readonly>
       <button id="copy">Copy link</button>
-    </div>
-
-    <p class="sharehead">Setting someone else up?</p>
-    <p class="help" style="margin-bottom:10px">
-      Send them <em>this page</em> with your options already picked. They just change the
-      channel and copy.
-    </p>
-    <div class="linkbox">
-      <input type="text" id="share" readonly>
-      <button class="ghost" id="copyShare">Copy</button>
     </div>
   </div>
 
