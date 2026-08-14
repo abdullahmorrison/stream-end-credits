@@ -69,7 +69,7 @@ test('collecting', async (t) => {
     assert.equal(names(r.sections(), 'raid'), undefined);
   });
 
-  await t.test('a resubber is in "still here", not "new subscribers"', () => {
+  await t.test('a resubber is in "resubs", not "new subscribers"', () => {
     const r = roster();
     r.add({ type: 'sub', login: 'nia', name: 'Nia' });
     r.add({ type: 'resub', login: 'ronni', name: 'Ronni', months: 6 });

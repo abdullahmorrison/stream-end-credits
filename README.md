@@ -45,7 +45,7 @@ reports scene *changes*, not the current scene.
 |---|---|
 | Raided by | Raiders, with how many they brought |
 | New subscribers | New subs, and everyone gifted one |
-| Still here | Resubs, with their month count |
+| Resubs | Returning subscribers, with their month count |
 | Gifted subs | Gifters, with how many they gave |
 | Cheered | Bits, added up per person |
 | First time in chat | Optional (`firsts=on`) |
