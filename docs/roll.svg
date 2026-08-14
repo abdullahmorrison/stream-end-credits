@@ -1,0 +1,76 @@
+<!-- An illustration of the roll, not a screen capture: same sections, same order, same
+     type treatment as src/credits.js and credits.html produce. Hand-authored so the repo
+     keeps its no-binaries, no-build rule.
+
+     The reel carries a static transform as well as the animation, so if a viewer strips
+     SMIL it comes to rest on a readable mid-roll frame rather than a blank one. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360"
+     font-family="Segoe UI, system-ui, -apple-system, Helvetica Neue, sans-serif">
+
+  <defs>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000"/>
+      <stop offset="0.13" stop-color="#fff"/>
+      <stop offset="0.87" stop-color="#fff"/>
+      <stop offset="1" stop-color="#000"/>
+    </linearGradient>
+    <mask id="edges">
+      <rect width="640" height="360" fill="url(#fade)"/>
+    </mask>
+    <clipPath id="frame">
+      <rect width="640" height="360" rx="10"/>
+    </clipPath>
+  </defs>
+
+  <rect width="640" height="360" rx="10" fill="#14111c"/>
+
+  <g clip-path="url(#frame)">
+  <g mask="url(#edges)">
+    <g transform="translate(0 -250)" fill="#ffffff" text-anchor="middle">
+      <animateTransform attributeName="transform" type="translate"
+                        values="0 360; 0 -1010" dur="18s" repeatCount="indefinite"/>
+
+      <text x="320" y="64" font-size="27" font-weight="300" letter-spacing="6">THANK YOU FOR WATCHING</text>
+      <text x="320" y="108" font-size="27" font-weight="700" fill="#d3b8ff">tenzinniznet</text>
+
+      <text x="320" y="196" font-size="13" font-weight="600" letter-spacing="4.6" fill="#b9a7d8">RAIDED BY</text>
+      <text x="320" y="236" font-size="22" font-weight="500">kaylee <tspan fill="#ffffff" opacity="0.55" font-size="15" font-weight="600">142</tspan></text>
+      <text x="320" y="270" font-size="22" font-weight="500">mochi_bun <tspan fill="#ffffff" opacity="0.55" font-size="15" font-weight="600">38</tspan></text>
+
+      <text x="320" y="358" font-size="13" font-weight="600" letter-spacing="4.6" fill="#b9a7d8">NEW SUBSCRIBERS</text>
+      <g font-size="22" font-weight="500">
+        <text x="160" y="398">devonte</text>
+        <text x="320" y="398">nia</text>
+        <text x="480" y="398">polarbb</text>
+        <text x="160" y="432">tt_arjun</text>
+        <text x="320" y="432">sam</text>
+        <text x="480" y="432">wrenlee</text>
+        <text x="160" y="466">quietfrog</text>
+        <text x="320" y="466">bex</text>
+        <text x="480" y="466">nikoo</text>
+        <text x="160" y="500">ravenshade</text>
+        <text x="320" y="500">juno</text>
+        <text x="480" y="500">kofi</text>
+      </g>
+
+      <text x="320" y="588" font-size="13" font-weight="600" letter-spacing="4.6" fill="#b9a7d8">STILL HERE</text>
+      <g font-size="22" font-weight="500">
+        <text x="200" y="628">plumtree <tspan opacity="0.55" font-size="15" font-weight="600">41 mo</tspan></text>
+        <text x="440" y="628">saoirse <tspan opacity="0.55" font-size="15" font-weight="600">26 mo</tspan></text>
+        <text x="200" y="662">lex <tspan opacity="0.55" font-size="15" font-weight="600">19 mo</tspan></text>
+        <text x="440" y="662">iris <tspan opacity="0.55" font-size="15" font-weight="600">6 mo</tspan></text>
+      </g>
+
+      <text x="320" y="750" font-size="13" font-weight="600" letter-spacing="4.6" fill="#b9a7d8">GIFTED SUBS</text>
+      <text x="320" y="790" font-size="22" font-weight="500">plumtree <tspan opacity="0.55" font-size="15" font-weight="600">×5</tspan></text>
+      <text x="320" y="824" font-size="22" font-weight="500">greymatter <tspan opacity="0.55" font-size="15" font-weight="600">×2</tspan></text>
+
+      <text x="320" y="912" font-size="13" font-weight="600" letter-spacing="4.6" fill="#b9a7d8">CHEERED</text>
+      <text x="320" y="952" font-size="22" font-weight="500">buttonmash <tspan opacity="0.55" font-size="15" font-weight="600">1000</tspan></text>
+      <text x="320" y="986" font-size="22" font-weight="500">onyxwaves <tspan opacity="0.55" font-size="15" font-weight="600">420</tspan></text>
+
+      <text x="320" y="1076" font-size="19" font-weight="300" letter-spacing="4" opacity="0.72">SEE YOU NEXT TIME</text>
+    </g>
+  </g>
+  </g>
+</svg>
