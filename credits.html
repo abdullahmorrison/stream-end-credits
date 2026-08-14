@@ -111,12 +111,16 @@
     padding: 4.5vh 0;
   }
   .section h2 {
-    margin: 0 0 3vh;
-    font-size: 2.2vh;
+    margin: 0 0 3.2vh;
+    /* Close to the names rather than well under them. Small caps with heavy tracking
+       still read as a heading against a list, and at the old 2.2vh they were losing that
+       fight at any distance from the screen. Tracking eased off as the size went up --
+       the two were compensating for each other. */
+    font-size: 2.9vh;
     font-weight: 600;
-    letter-spacing: 0.36em;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: #b9a7d8;
+    color: #c3b2df;
   }
 
   .names {
