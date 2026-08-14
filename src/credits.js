@@ -42,6 +42,9 @@ export class CreditsReel {
     this.stop();
 
     this.reel = el('div', 'reel');
+    // Drives the alignment rules in credits.html rather than setting styles here, so the
+    // layout stays in one file.
+    this.reel.dataset.align = this.config.align;
     this.reel.appendChild(this.titleCard());
     for (const section of sections) this.reel.appendChild(this.section(section));
     if (note) this.reel.appendChild(this.note(note));

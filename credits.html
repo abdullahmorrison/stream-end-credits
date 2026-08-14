@@ -68,6 +68,13 @@
     text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
   }
 
+  /* Centre is the base above. These only change the ragged edge -- where the reel sits on
+     screen is the browser source's own position and size in OBS. */
+  .reel[data-align="left"] { text-align: left; }
+  .reel[data-align="right"] { text-align: right; }
+  .reel[data-align="left"] .names li { justify-content: flex-start; }
+  .reel[data-align="right"] .names li { justify-content: flex-end; }
+
   .card {
     padding: 8vh 0;
   }

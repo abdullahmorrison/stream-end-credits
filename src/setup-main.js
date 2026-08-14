@@ -15,6 +15,7 @@ const channelEl = $('channel');
 const titleEl = $('title');
 const speedEl = $('speed');
 const columnsEl = $('columns');
+const alignEl = $('align');
 const backdropEl = $('backdrop');
 const firstsEl = $('firsts');
 const linkEl = $('link');
@@ -29,6 +30,7 @@ function settings() {
     title: titleEl.value.trim(),
     speed: clampSpeed(speedEl.value),
     columns: parseInt(columnsEl.value, 10),
+    align: alignEl.value,
     backdrop: parseFloat(backdropEl.value),
     // A select rather than a checkbox, so it carries the same weight as every other
     // option here. A lone checkbox under a row of dropdowns reads as a footnote and
@@ -49,9 +51,10 @@ function overlayUrl(extra = {}) {
   if (s.title !== DEFAULTS.title) url.searchParams.set('title', s.title);
   if (s.speed !== DEFAULTS.speed) url.searchParams.set('speed', String(s.speed));
   if (s.columns !== DEFAULTS.columns) url.searchParams.set('columns', String(s.columns));
+  if (s.align !== DEFAULTS.align) url.searchParams.set('align', s.align);
   if (s.backdrop !== DEFAULTS.backdrop) url.searchParams.set('backdrop', String(s.backdrop));
-  // Written either way rather than only when on, since the default is now on and leaving
-  // it out would mean "on" instead of what was picked.
+  // Written either way rather than only when on, so the link still says what was picked
+  // if this default ever flips.
   if (s.firsts !== DEFAULTS.firsts) url.searchParams.set('firsts', s.firsts ? 'on' : 'off');
 
   for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, value);
@@ -132,7 +135,7 @@ function checkChannel() {
 }
 
 // The preview reloads on a look change, but not on every keystroke in the channel box.
-for (const el of [speedEl, columnsEl, backdropEl, firstsEl]) {
+for (const el of [speedEl, columnsEl, alignEl, backdropEl, firstsEl]) {
   el.addEventListener('change', () => {
     refresh();
     replay();
@@ -174,6 +177,7 @@ if (incoming.channel) channelEl.value = incoming.channel;
 titleEl.value = incoming.title;
 selectValue(speedEl, incoming.speed);
 selectValue(columnsEl, incoming.columns);
+selectValue(alignEl, incoming.align);
 selectValue(backdropEl, incoming.backdrop);
 selectValue(firstsEl, incoming.firsts ? 'on' : 'off');
 

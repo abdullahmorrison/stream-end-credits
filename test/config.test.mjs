@@ -104,6 +104,17 @@ test('readConfig', async (t) => {
     assert.equal(readConfig('?columns=2').columns, 2);
   });
 
+  // This value goes straight into a CSS attribute selector, where anything unrecognised
+  // would quietly render centred with nothing to say the setting was ignored.
+  await t.test('alignment only takes the three it knows', () => {
+    for (const value of ['left', 'right', 'center', 'LEFT', ' right ']) {
+      assert.equal(readConfig(`?align=${encodeURIComponent(value)}`).align, value.trim().toLowerCase(), value);
+    }
+    for (const value of ['middle', 'justify', 'flex-start', '']) {
+      assert.equal(readConfig(`?align=${value}`).align, DEFAULTS.align, value);
+    }
+  });
+
   await t.test('the backdrop is an opacity, not a colour', () => {
     assert.equal(readConfig('?backdrop=0.6').backdrop, 0.6);
     assert.equal(readConfig('?backdrop=5').backdrop, 1);

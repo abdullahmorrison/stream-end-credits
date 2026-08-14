@@ -66,6 +66,7 @@ All settings are URL params; the setup page writes them for you.
 | `speed` | `90` | Scroll pace in pixels per second |
 | `duration` | *(off)* | Fixed runtime in seconds. Overrides `speed` |
 | `columns` | `3` | Columns of names. Drops for a short list |
+| `align` | `center` | How names line up in their columns — `left`, `right` |
 | `firsts` | `off` | Include first-time chatters |
 | `sessionHours` | `12` | How old a stored roster may be before it is discarded |
 | `backdrop` | `0` | Dim behind the credits, `0`–`1` |

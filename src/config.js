@@ -1,6 +1,12 @@
 // Every setting lives in the overlay URL, so the streamer never edits a file and you
 // can retune by changing the Browser Source URL.
 
+// How names sit inside their columns. This is the ragged edge only -- where the reel sits
+// on screen is the browser source's own position and size in OBS, which does that job
+// better than a param could. The two compose: OBS places the block, this aligns the text
+// in it.
+const ALIGNMENTS = ['center', 'left', 'right'];
+
 // How long the reel scrolls, in pixels per second. Held to a range that stays readable:
 // too slow and the credits outlast the ending scene, too fast and nobody reads a name.
 const MIN_SPEED = 20;
@@ -22,6 +28,7 @@ const DEFAULTS = {
   speed: 90,
   duration: 0,
   columns: 3,
+  align: 'center',
   // Everyone who said something for the first time. Off by default: on a big channel
   // this category is longer than all the others put together. Turn it on with
   // `firsts=on`, or hand someone a setup link that already has it on.
@@ -96,6 +103,7 @@ export function clampSessionHours(value, fallback = DEFAULTS.sessionHours) {
 
 export function readConfig(search = '') {
   const q = new URLSearchParams(search);
+  const align = (q.get('align') || '').trim().toLowerCase();
 
   return {
     ...DEFAULTS,
@@ -104,6 +112,9 @@ export function readConfig(search = '') {
     speed: clampSpeed(q.get('speed')),
     duration: clampDuration(q.get('duration')),
     columns: int(q.get('columns'), DEFAULTS.columns, 1, 6),
+    // Whitelisted rather than passed through: it lands in a CSS attribute selector, where
+    // an unknown value would quietly get the centred styling with nothing to say why.
+    align: ALIGNMENTS.includes(align) ? align : DEFAULTS.align,
     firsts: flag(q.get('firsts'), DEFAULTS.firsts),
     sessionHours: clampSessionHours(q.get('sessionHours')),
     backdrop: float(q.get('backdrop'), DEFAULTS.backdrop, 0, 1),
@@ -115,6 +126,7 @@ export function readConfig(search = '') {
 }
 
 export {
+  ALIGNMENTS,
   DEFAULTS,
   MIN_SPEED,
   MAX_SPEED,
