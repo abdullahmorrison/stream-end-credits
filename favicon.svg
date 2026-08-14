@@ -1,0 +1,12 @@
+<!-- Sun on the horizon with its light broken up on the water below. The two shortening
+     bars underneath are what make it read as going down rather than coming up, and they
+     are the first thing to check if this is ever redrawn. Used as the favicon and as the
+     setup page's header mark, so there is one drawing rather than two to keep in step. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <g fill="#9a6cff">
+    <path d="M5 20.8a11 11 0 0 1 22 0z"/>
+    <rect x="1.5" y="22.2" width="29" height="2.9" rx="1.45"/>
+    <rect x="6.4" y="26.6" width="19.2" height="2.5" rx="1.25" opacity="0.6"/>
+    <rect x="10.8" y="30" width="10.4" height="1.9" rx="0.95" opacity="0.34"/>
+  </g>
+</svg>
