@@ -43,7 +43,13 @@ function setStatus(text, sticky = false) {
   statusEl.textContent = text;
 }
 
-if (!config.channel) {
+if (config.demo) {
+  // A demo has made-up names and reads no chat, so there is nothing to confirm and
+  // nothing that can be misconfigured. Warning about a channel here would be warning
+  // about something the demo does not use -- which is what it did, right on top of the
+  // setup page's preview.
+  statusLocked = true;
+} else if (!config.channel) {
   setStatus('No channel set. Add ?channel=yourname to the URL.', true);
   statusLocked = true;
 } else {
@@ -58,7 +64,10 @@ if (!config.channel) {
 
 // --- collecting -----------------------------------------------------------
 
-if (config.channel) {
+// Demo mode never connects, whatever channel it was given. That is what lets the preview
+// keep the channel in its URL -- so the title card shows the real name -- without every
+// keystroke in the channel box opening a socket.
+if (config.channel && !config.demo) {
   const chat = new TwitchChat(config.channel);
 
   chat.addEventListener('status', (e) => {

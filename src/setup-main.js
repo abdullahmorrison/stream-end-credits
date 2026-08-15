@@ -66,11 +66,10 @@ function refresh() {
 }
 
 function replay() {
-  // Demo mode fills a roster with made-up names, and no channel is set, so the preview
-  // never opens a chat connection of its own.
-  const url = new URL(overlayUrl({ demo: 'on' }));
-  url.searchParams.delete('channel');
-  previewEl.src = url.toString();
+  // Demo mode fills a roster with made-up names and never connects to chat, so the
+  // channel can stay in the URL: the preview's title card shows the real name, and no
+  // socket is opened for it.
+  previewEl.src = overlayUrl({ demo: 'on' });
 }
 
 $('copy').addEventListener('click', async () => {
@@ -144,7 +143,12 @@ for (const el of [channelEl, titleEl]) {
   el.addEventListener('input', refresh);
 }
 titleEl.addEventListener('change', replay);
-channelEl.addEventListener('change', checkChannel);
+// On change rather than input: the preview reloads, and doing that per keystroke would
+// restart the roll while somebody is still typing their name.
+channelEl.addEventListener('change', () => {
+  checkChannel();
+  replay();
+});
 
 // --- prefill -------------------------------------------------------------
 //
