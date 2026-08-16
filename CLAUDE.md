@@ -63,6 +63,12 @@ both the JOIN target and the `localStorage` key, so two spellings would be two r
 and the credits would roll with half the stream missing. Twitch accepts a JOIN to a
 channel that does not exist, so nothing errors either way.
 
+The setup page mirrors the same params into its *own* address bar with `replaceState`, so
+the page link is as good as the overlay link — reload it, bookmark it or send it and every
+option comes back picked. It already prefilled through `readConfig`, which is what makes
+that safe: the page reads exactly what it writes. `tomatod` and `stream-breaking-news` do
+the same.
+
 ## Layers
 
 ```

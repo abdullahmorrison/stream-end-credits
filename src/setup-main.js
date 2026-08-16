@@ -61,8 +61,23 @@ function overlayUrl(extra = {}) {
   return url.toString();
 }
 
+/**
+ * Put the current settings in this page's own address bar. The page already reads these
+ * params on load, so this closes the loop: reload, bookmark or send the page link and it
+ * comes back with every option already picked, instead of losing the work to a stray
+ * refresh.
+ *
+ * replaceState, not pushState — changing a dropdown should not fill the back button with
+ * every value it passed through on the way.
+ */
+function syncPageUrl() {
+  const { search } = new URL(overlayUrl());
+  history.replaceState(null, '', search || window.location.pathname);
+}
+
 function refresh() {
   linkEl.value = overlayUrl();
+  syncPageUrl();
 }
 
 function replay() {
