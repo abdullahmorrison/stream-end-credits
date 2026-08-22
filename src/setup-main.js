@@ -17,7 +17,16 @@ const speedEl = $('speed');
 const columnsEl = $('columns');
 const alignEl = $('align');
 const backdropEl = $('backdrop');
-const firstsEl = $('firsts');
+
+// The section switches, keyed by the config name each one writes. Kept as a map rather
+// than four variables so building the link, prefilling and wiring up the listeners are
+// each one loop -- adding a section later is one line here and one checkbox in the HTML.
+const TOGGLES = {
+  mods: $('mods'),
+  streaks: $('streaks'),
+  vips: $('vips'),
+  firsts: $('firsts'),
+};
 const linkEl = $('link');
 const previewEl = $('preview');
 const statusEl = $('channelStatus');
@@ -32,10 +41,7 @@ function settings() {
     columns: parseInt(columnsEl.value, 10),
     align: alignEl.value,
     backdrop: parseFloat(backdropEl.value),
-    // A select rather than a checkbox, so it carries the same weight as every other
-    // option here. A lone checkbox under a row of dropdowns reads as a footnote and
-    // gets scrolled past.
-    firsts: firstsEl.value === 'on',
+    ...Object.fromEntries(Object.entries(TOGGLES).map(([key, el]) => [key, el.checked])),
   };
 }
 
@@ -53,9 +59,12 @@ function overlayUrl(extra = {}) {
   if (s.columns !== DEFAULTS.columns) url.searchParams.set('columns', String(s.columns));
   if (s.align !== DEFAULTS.align) url.searchParams.set('align', s.align);
   if (s.backdrop !== DEFAULTS.backdrop) url.searchParams.set('backdrop', String(s.backdrop));
-  // Written either way rather than only when on, so the link still says what was picked
-  // if this default ever flips.
-  if (s.firsts !== DEFAULTS.firsts) url.searchParams.set('firsts', s.firsts ? 'on' : 'off');
+  // Written either way rather than only when on: two of these default to on, so a link
+  // that only ever said `on` could not turn one off, and any of the defaults flipping
+  // later would silently change what an already-pasted link does.
+  for (const key of Object.keys(TOGGLES)) {
+    if (s[key] !== DEFAULTS[key]) url.searchParams.set(key, s[key] ? 'on' : 'off');
+  }
 
   for (const [key, value] of Object.entries(extra)) url.searchParams.set(key, value);
   return url.toString();
@@ -148,7 +157,7 @@ function checkChannel() {
 }
 
 // The preview reloads on a look change, but not on every keystroke in the channel box.
-for (const el of [speedEl, columnsEl, alignEl, backdropEl, firstsEl]) {
+for (const el of [speedEl, columnsEl, alignEl, backdropEl, ...Object.values(TOGGLES)]) {
   el.addEventListener('change', () => {
     refresh();
     replay();
@@ -197,7 +206,7 @@ selectValue(speedEl, incoming.speed);
 selectValue(columnsEl, incoming.columns);
 selectValue(alignEl, incoming.align);
 selectValue(backdropEl, incoming.backdrop);
-selectValue(firstsEl, incoming.firsts ? 'on' : 'off');
+for (const [key, el] of Object.entries(TOGGLES)) el.checked = incoming[key];
 
 refresh();
 replay();

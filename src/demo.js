@@ -52,6 +52,21 @@ export function demoCredits() {
     out.push({ type: 'first', login: name.toLowerCase(), name });
   }
 
+  // Watch streaks, including a one-stream streak so the singular in the detail text
+  // gets looked at as often as the plural does.
+  for (const [i, name] of pick(NAMES.slice(4), 5).entries()) {
+    out.push({ type: 'streak', login: name.toLowerCase(), name, streak: [31, 12, 7, 3, 1][i] });
+  }
+
+  // Mods and VIPs arrive as ordinary chat badges, so in a real stream these overlap
+  // heavily with the names above -- which is exactly what the demo should show.
+  for (const name of pick(NAMES.slice(6), 4)) {
+    out.push({ type: 'mod', login: name.toLowerCase(), name });
+  }
+  for (const name of pick(NAMES.slice(16), 3)) {
+    out.push({ type: 'vip', login: name.toLowerCase(), name });
+  }
+
   return out;
 }
 
@@ -66,7 +81,10 @@ export function fakeCredit(n) {
     { type: 'cheer', login, name, bits: 250 },
     { type: 'raid', login, name, viewers: 77 },
     { type: 'first', login, name },
-  ][n % 6];
+    { type: 'streak', login, name, streak: 9 },
+    { type: 'vip', login, name },
+    { type: 'mod', login, name },
+  ][n % 9];
 }
 
 export { NAMES };

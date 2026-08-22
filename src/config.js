@@ -29,6 +29,16 @@ const DEFAULTS = {
   duration: 0,
   columns: 3,
   align: 'center',
+  // Which optional sections roll. Each is a switch that can be set either way, so a
+  // default flipping later cannot silently change what an existing link does.
+  //
+  // Mods and watch streaks are on: both are small, and both thank people who otherwise
+  // go unmentioned -- a mod who never subs and a regular who never spends anything.
+  mods: true,
+  streaks: true,
+  // VIPs off: plenty of channels hand the badge out for reasons that have nothing to do
+  // with the stream being thanked, so this one is asked for rather than assumed.
+  vips: false,
   // Everyone who said something for the first time. Off by default: on a big channel
   // this category is longer than all the others put together. Turn it on with
   // `firsts=on`, or hand someone a setup link that already has it on.
@@ -58,8 +68,8 @@ const FALSY = /^(off|0|false|no)$/i;
 
 /**
  * A switch that can be turned either way, because not every one of these defaults to off.
- * `firsts` is on, so reading a missing param as false would quietly ignore the default,
- * and `?firsts=off` has to actually mean off rather than "not the word on".
+ * `mods` and `streaks` are on, so reading a missing param as false would quietly ignore
+ * the default, and `?mods=off` has to actually mean off rather than "not the word on".
  * Anything unrecognised falls back rather than guessing.
  */
 function flag(value, fallback = false) {
@@ -115,6 +125,9 @@ export function readConfig(search = '') {
     // Whitelisted rather than passed through: it lands in a CSS attribute selector, where
     // an unknown value would quietly get the centred styling with nothing to say why.
     align: ALIGNMENTS.includes(align) ? align : DEFAULTS.align,
+    mods: flag(q.get('mods'), DEFAULTS.mods),
+    streaks: flag(q.get('streaks'), DEFAULTS.streaks),
+    vips: flag(q.get('vips'), DEFAULTS.vips),
     firsts: flag(q.get('firsts'), DEFAULTS.firsts),
     sessionHours: clampSessionHours(q.get('sessionHours')),
     backdrop: float(q.get('backdrop'), DEFAULTS.backdrop, 0, 1),

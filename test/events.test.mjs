@@ -50,6 +50,29 @@ const CHAT =
   'subscriber=0;tmi-sent-ts=1;turbo=0;user-id=2;user-type= ' +
   ':sam!sam@sam.tmi.twitch.tv PRIVMSG #dallas :hello';
 
+// Mods and VIPs come off the badges of an ordinary message. There is no event for
+// either, so these lines are the only thing standing between a mod and no thank-you.
+const MOD =
+  '@badge-info=;badges=moderator/1,subscriber/12;color=;display-name=Wrenlee;emotes=;' +
+  'first-msg=0;id=1;mod=1;room-id=1;subscriber=1;tmi-sent-ts=1;turbo=0;user-id=2;user-type=mod ' +
+  ':wrenlee!wrenlee@wrenlee.tmi.twitch.tv PRIVMSG #dallas :on it';
+
+const VIP =
+  '@badge-info=;badges=vip/1,subscriber/3;color=;display-name=Juno;emotes=;first-msg=0;id=1;' +
+  'mod=0;room-id=1;subscriber=1;tmi-sent-ts=1;turbo=0;user-id=2;user-type=;vip=1 ' +
+  ':juno!juno@juno.tmi.twitch.tv PRIVMSG #dallas :hey';
+
+const BROADCASTER =
+  '@badge-info=;badges=broadcaster/1,moderator/1;color=;display-name=Dallas;emotes=;' +
+  'first-msg=0;id=1;mod=1;room-id=1;subscriber=0;tmi-sent-ts=1;turbo=0;user-id=2;user-type= ' +
+  ':dallas!dallas@dallas.tmi.twitch.tv PRIVMSG #dallas :thanks all';
+
+const MILESTONE =
+  '@badge-info=;badges=;color=;display-name=Pip;emotes=;flags=;id=1;login=pip;mod=0;' +
+  'msg-id=viewermilestone;msg-param-category=watch-streak;msg-param-id=abc;msg-param-value=12;' +
+  'room-id=1;subscriber=0;system-msg=Pip\\swatched\\s12\\sconsecutive\\sstreams;tmi-sent-ts=1;' +
+  'user-id=2;user-type= :tmi.twitch.tv USERNOTICE #dallas :hi';
+
 test('tags', async (t) => {
   await t.test('unescapes the values Twitch escapes', () => {
     // A semicolon inside a value is sent as `\:`, so it survives the split on `;` that
@@ -159,10 +182,72 @@ test('credits from a line', async (t) => {
   });
 
   await t.test('notices that are not somebody doing something are ignored', () => {
-    for (const id of ['announcement', 'ritual', 'bitsbadgetier', 'viewermilestone']) {
+    for (const id of ['announcement', 'ritual', 'bitsbadgetier', 'sharedchatnotice']) {
       assert.deepEqual(credits(SUB.replace('msg-id=sub;', `msg-id=${id};`)), [], id);
     }
   });
 });
 
-export { SUB, RESUB, SUBGIFT, MYSTERY, RAID, CHEER, CHAT };
+test('badges', async (t) => {
+  await t.test('a moderator badge credits a mod', () => {
+    assert.deepEqual(credits(MOD), [{ type: 'mod', login: 'wrenlee', name: 'Wrenlee' }]);
+  });
+
+  await t.test('a vip badge credits a vip', () => {
+    assert.deepEqual(credits(VIP), [{ type: 'vip', login: 'juno', name: 'Juno' }]);
+  });
+
+  // The badge is what shows in chat and the tag is what Twitch documents. Either alone
+  // has to be enough, or a mod goes uncredited on whichever line shape disagrees.
+  await t.test('the mod tag alone is enough, with no badge', () => {
+    const tagOnly = CHAT.replace('badges=;', 'badges=;').replace('mod=0', 'mod=1');
+    assert.deepEqual(credits(tagOnly), [{ type: 'mod', login: 'sam', name: 'Sam' }]);
+  });
+
+  // The broadcaster holds an implicit moderator badge, so without this every channel
+  // credits its own owner under "Moderated by" -- at the top, above the actual mods.
+  await t.test('the broadcaster is not one of their own mods', () => {
+    assert.deepEqual(credits(BROADCASTER), []);
+  });
+
+  await t.test('a modded bot is not thanked for moderating', () => {
+    const bot = MOD.replace(/display-name=Wrenlee/, 'display-name=Nightbot').replace(
+      /:wrenlee!wrenlee@wrenlee/,
+      ':nightbot!nightbot@nightbot',
+    );
+    assert.deepEqual(credits(bot), []);
+  });
+
+  await t.test('an ordinary chatter is neither', () => {
+    assert.deepEqual(credits(CHAT), []);
+  });
+
+  await t.test('a mod who cheers is credited for both', () => {
+    const cheering = MOD.replace('badge-info=;', 'badge-info=;bits=200;');
+    assert.deepEqual(
+      credits(cheering).map((c) => c.type),
+      ['cheer', 'mod'],
+    );
+  });
+});
+
+test('watch streaks', async (t) => {
+  await t.test('a watch streak credits the viewer with its length', () => {
+    assert.deepEqual(credits(MILESTONE), [
+      { type: 'streak', login: 'pip', name: 'Pip', streak: 12 },
+    ]);
+  });
+
+  // watch-streak is the only category Twitch defines today. A new one would mean
+  // something else entirely, and filing it under streaks would put a wrong number on
+  // screen rather than raise anything.
+  await t.test('a milestone that is not a watch streak is ignored', () => {
+    assert.deepEqual(credits(MILESTONE.replace('watch-streak', 'something-else')), []);
+  });
+
+  await t.test('a streak with no length is ignored', () => {
+    assert.deepEqual(credits(MILESTONE.replace('msg-param-value=12', 'msg-param-value=0')), []);
+  });
+});
+
+export { SUB, RESUB, SUBGIFT, MYSTERY, RAID, CHEER, CHAT, MOD, VIP, BROADCASTER, MILESTONE };

@@ -10,13 +10,23 @@ const KEY_PREFIX = 'stream-end-credits';
 
 // Sections in the order they roll. Order is data, not a chain of if-statements, so
 // adding a category later is one entry here plus the credit that fills it.
+//
+// `flag` names the setting that switches a section on, and matches its config key
+// exactly so the whole config object can be handed to `sections()`. `on` is what that
+// setting defaults to -- kept beside the section rather than only in config.js, so a
+// roster used on its own behaves the way the overlay does.
+//
+// The order is a film's: the audience first, then the people who worked the room.
 const SECTIONS = [
   { id: 'raid', title: 'Raided by', pick: (e) => e.viewers > 0, by: 'viewers' },
   { id: 'sub', title: 'New subscribers', pick: (e) => e.sub && !e.months, by: 'name' },
   { id: 'resub', title: 'Resubs', pick: (e) => e.months > 0, by: 'months' },
   { id: 'gift', title: 'Gifted subs', pick: (e) => e.gifts > 0, by: 'gifts' },
   { id: 'cheer', title: 'Cheered', pick: (e) => e.bits > 0, by: 'bits' },
-  { id: 'first', title: 'First time in chat', pick: (e) => e.first, by: 'name', optIn: true },
+  { id: 'streak', title: 'Watch streaks', pick: (e) => e.streak > 0, by: 'streak', flag: 'streaks', on: true },
+  { id: 'first', title: 'First time in chat', pick: (e) => e.first, by: 'name', flag: 'firsts', on: false },
+  { id: 'vip', title: 'VIPs', pick: (e) => e.vip, by: 'name', flag: 'vips', on: false },
+  { id: 'mod', title: 'Moderated by', pick: (e) => e.mod, by: 'name', flag: 'mods', on: true },
 ];
 
 const DETAIL = {
@@ -24,6 +34,7 @@ const DETAIL = {
   gifts: (e) => `×${e.gifts}`,
   bits: (e) => `${e.bits}`,
   months: (e) => `${e.months} mo`,
+  streak: (e) => `${e.streak} stream${e.streak === 1 ? '' : 's'}`,
   name: () => '',
 };
 
@@ -36,7 +47,10 @@ function blank(login, name) {
     months: 0,
     gifts: 0,
     bits: 0,
+    streak: 0,
     first: false,
+    vip: false,
+    mod: false,
   };
 }
 
@@ -124,8 +138,19 @@ export class Roster {
       case 'cheer':
         e.bits += credit.bits || 0;
         break;
+      case 'streak':
+        // Twitch sends the milestone once, but a reconnect can replay it. Keeping the
+        // larger number means a re-delivered older milestone cannot walk it backwards.
+        e.streak = Math.max(e.streak, credit.streak || 0);
+        break;
       case 'first':
         e.first = true;
+        break;
+      case 'vip':
+        e.vip = true;
+        break;
+      case 'mod':
+        e.mod = true;
         break;
       default:
         return;
@@ -137,12 +162,15 @@ export class Roster {
    * The reel, grouped and sorted. Empty sections are dropped entirely: a stream with no
    * raids should show no "Raided by" heading rather than a heading over nothing.
    */
-  sections({ firsts = false } = {}) {
+  sections(show = {}) {
     const all = [...this.entries.values()];
     const out = [];
 
     for (const section of SECTIONS) {
-      if (section.optIn && !firsts) continue;
+      // `?? section.on` rather than a plain lookup: a caller who passes nothing, or who
+      // passes only some of the switches, gets each section's own default instead of
+      // silently turning off the ones that ship on.
+      if (section.flag && !(show[section.flag] ?? section.on)) continue;
       const picked = all.filter(section.pick);
       if (!picked.length) continue;
 

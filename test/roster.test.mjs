@@ -268,3 +268,100 @@ test('the session', async (t) => {
     assert.equal(r.size, 1);
   });
 });
+
+// Which sections roll is now four separate switches, two of which ship on. A section
+// silently defaulting the wrong way either drops people who should be thanked or puts a
+// list on stream the streamer never asked for -- and both look identical to a working
+// overlay right up until the credits roll.
+test('section switches', async (t) => {
+  const filled = () => {
+    const r = roster();
+    r.add({ type: 'mod', login: 'wrenlee', name: 'Wrenlee' });
+    r.add({ type: 'vip', login: 'juno', name: 'Juno' });
+    r.add({ type: 'streak', login: 'pip', name: 'Pip', streak: 12 });
+    r.add({ type: 'first', login: 'sam', name: 'Sam' });
+    return r;
+  };
+
+  await t.test('mods and streaks roll without being asked for', () => {
+    assert.deepEqual(ids(filled().sections()), ['streak', 'mod']);
+  });
+
+  await t.test('vips and firsts stay out until they are asked for', () => {
+    assert.deepEqual(
+      ids(filled().sections({ vips: true, firsts: true })),
+      ['streak', 'first', 'vip', 'mod'],
+    );
+  });
+
+  await t.test('the two that ship on can be switched off', () => {
+    assert.deepEqual(ids(filled().sections({ mods: false, streaks: false })), []);
+  });
+
+  // Passing some switches must not turn the unmentioned ones off: the debug panel and
+  // the reel both hand over a partial object.
+  await t.test('a partial set of switches leaves the rest at their own default', () => {
+    assert.deepEqual(ids(filled().sections({ vips: true })), ['streak', 'vip', 'mod']);
+  });
+
+  await t.test('every section in one roll keeps its order', () => {
+    const r = filled();
+    r.add({ type: 'raid', login: 'a', name: 'a', viewers: 3 });
+    r.add({ type: 'sub', login: 'b', name: 'b' });
+    r.add({ type: 'resub', login: 'c', name: 'c', months: 2 });
+    r.add({ type: 'gift', login: 'd', name: 'd', gifts: 1 });
+    r.add({ type: 'cheer', login: 'e', name: 'e', bits: 1 });
+    assert.deepEqual(ids(r.sections({ vips: true, firsts: true })), [
+      'raid',
+      'sub',
+      'resub',
+      'gift',
+      'cheer',
+      'streak',
+      'first',
+      'vip',
+      'mod',
+    ]);
+  });
+});
+
+test('watch streaks', async (t) => {
+  await t.test('longest streak first, with the count beside the name', () => {
+    const r = roster();
+    r.add({ type: 'streak', login: 'pip', name: 'Pip', streak: 3 });
+    r.add({ type: 'streak', login: 'ari', name: 'Ari', streak: 31 });
+    assert.deepEqual(r.sections().find((s) => s.id === 'streak').names, [
+      { name: 'Ari', detail: '31 streams' },
+      { name: 'Pip', detail: '3 streams' },
+    ]);
+  });
+
+  await t.test('one stream is not one streams', () => {
+    const r = roster();
+    r.add({ type: 'streak', login: 'pip', name: 'Pip', streak: 1 });
+    assert.equal(r.sections().find((s) => s.id === 'streak').names[0].detail, '1 stream');
+  });
+
+  // A reconnect replays notices. Taking the later one would walk a streak backwards.
+  await t.test('a replayed older milestone does not shorten the streak', () => {
+    const r = roster();
+    r.add({ type: 'streak', login: 'pip', name: 'Pip', streak: 12 });
+    r.add({ type: 'streak', login: 'pip', name: 'Pip', streak: 4 });
+    assert.equal(r.sections().find((s) => s.id === 'streak').names[0].detail, '12 streams');
+  });
+});
+
+test('mods and vips survive a reload', () => {
+  const storage = memStorage();
+  const first = roster({ storage });
+  first.add({ type: 'mod', login: 'wrenlee', name: 'Wrenlee' });
+  first.add({ type: 'vip', login: 'juno', name: 'Juno' });
+  first.add({ type: 'streak', login: 'pip', name: 'Pip', streak: 9 });
+  first.flush();
+
+  const second = roster({ storage });
+  assert.equal(second.load(), true);
+  assert.deepEqual(names(second.sections({ vips: true }), 'mod'), ['Wrenlee']);
+  assert.deepEqual(names(second.sections({ vips: true }), 'vip'), ['Juno']);
+  assert.deepEqual(names(second.sections(), 'streak'), ['Pip']);
+});

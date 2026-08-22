@@ -9,6 +9,28 @@
 // never credited as a gifter.
 const ANON_GIFTER = 'ananonymousgifter';
 
+// Chat bots that are almost always modded. Crediting Nightbot under "Moderated by",
+// above the humans who actually did the work, is the kind of thing that looks broken
+// on stream and errors nowhere. Only applied to the badge-derived sections: a bot does
+// not sub, raid or cheer, so nothing else needs the guard.
+const BOTS = new Set([
+  'nightbot',
+  'streamelements',
+  'streamlabs',
+  'moobot',
+  'fossabot',
+  'wizebot',
+  'sery_bot',
+  'botrixoficial',
+  'own3d',
+  'commanderroot',
+  'streamstickers',
+  'creatisbot',
+  'phantombot',
+  'deepbot',
+  'ankhbot',
+]);
+
 const TIERS = { Prime: 'Prime', 1000: 'Tier 1', 2000: 'Tier 2', 3000: 'Tier 3' };
 
 function person(login, displayName) {
@@ -25,10 +47,24 @@ function count(value, fallback = 1) {
 }
 
 /**
+ * The badge names on a line, without their versions: `moderator/1,subscriber/12` is
+ * `{moderator, subscriber}`. The version is the badge's tier or month count and none of
+ * the sections here care which one somebody is wearing.
+ */
+function parseBadges(value) {
+  const out = new Set();
+  for (const part of (value || '').split(',')) {
+    const name = part.split('/')[0].trim();
+    if (name) out.add(name);
+  }
+  return out;
+}
+
+/**
  * Credits from one parsed line. `[]` for anything that earns nobody a mention.
  *
  * Each credit is `{ type, login, name, ... }` where type is one of:
- *   raid | unraid | sub | resub | gift | cheer | first
+ *   raid | unraid | sub | resub | gift | cheer | streak | first | vip | mod
  */
 export function toCredits(line) {
   if (!line) return [];
@@ -41,6 +77,24 @@ function fromChat({ login, displayName, tags }) {
 
   const bits = count(tags.bits, 0);
   if (bits > 0) out.push({ type: 'cheer', ...who, bits });
+
+  // Mods and VIPs are read off the badges on an ordinary message rather than from an
+  // event, because Twitch never announces either one -- there is no "became a mod" line
+  // to listen for. The cost is that this only ever sees somebody who *spoke*: a mod who
+  // lurked all stream is invisible here, and the setup page says so.
+  //
+  // Only PRIVMSG. A USERNOTICE carries badges too, but whose they are depends on the
+  // msg-id -- the gifter on a subgift, the raider on a raid -- and stapling a crew
+  // credit onto that is where a quiet mis-credit would come from.
+  const badges = parseBadges(tags.badges);
+  // Nobody is a guest at their own stream, and the broadcaster's badge always outranks
+  // the moderator one they implicitly hold.
+  if (!badges.has('broadcaster') && who.login && !BOTS.has(who.login)) {
+    // Both the badge and the standalone tag are read: the badge is what shows in chat,
+    // the tag is what Twitch documents, and they have not always agreed.
+    if (badges.has('moderator') || tags.mod === '1') out.push({ type: 'mod', ...who });
+    if (badges.has('vip') || tags.vip === '1') out.push({ type: 'vip', ...who });
+  }
 
   // Twitch flags a first-ever message in the channel for us, so this needs no memory of
   // who has spoken before -- which matters, because this page only ever sees the part
@@ -110,11 +164,24 @@ function fromNotice({ login, displayName, tags }) {
     case 'unraid':
       return [{ type: 'unraid', ...person(tags['msg-param-login'] || login, displayName) }];
 
-    // Announcements, rituals, bits badges, watch streaks: real notices, but not
+    // Watch streaks: somebody who has turned up for N streams in a row. The streak is
+    // earned by watching, but this notice only exists when the viewer *shares* it in
+    // chat -- a tap they take, once per stream, and only if the channel has the feature
+    // on. So this section is the people who chose to say so, not everyone with a
+    // streak, and there is no way to see the rest without a login.
+    case 'viewermilestone': {
+      // `watch-streak` is the only category Twitch defines today. A new one would mean
+      // something else entirely, so it is ignored rather than filed under streaks.
+      if (tags['msg-param-category'] !== 'watch-streak') return [];
+      const streak = count(tags['msg-param-value'], 0);
+      return streak > 0 ? [{ type: 'streak', ...who, streak }] : [];
+    }
+
+    // Announcements, rituals, bits badges, shared-chat notices: real notices, but not
     // somebody doing something for the channel.
     default:
       return [];
   }
 }
 
-export { ANON_GIFTER, TIERS };
+export { ANON_GIFTER, TIERS, BOTS, parseBadges };

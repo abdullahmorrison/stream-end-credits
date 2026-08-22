@@ -102,7 +102,9 @@ if (config.demo) for (const credit of demoCredits()) roster.add(credit);
 const JUST_STARTED = 60000;
 
 function start() {
-  const sections = roster.sections({ firsts: config.firsts });
+  // The config *is* the set of switches: every section's `flag` in roster.js is named
+  // after its config key, so there is no mapping here to fall out of step.
+  const sections = roster.sections(config);
   const note = sections.length
     ? ''
     : roster.age() < JUST_STARTED
@@ -162,7 +164,7 @@ if (config.debug) {
   const refresh = () => {
     const mins = Math.round(roster.age() / 60000);
     const sections = roster
-      .sections({ firsts: config.firsts })
+      .sections(config)
       .map((s) => `${s.id}:${s.names.length}`)
       .join(' ');
     panel.textContent =

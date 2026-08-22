@@ -98,6 +98,25 @@ test('readConfig', async (t) => {
     assert.equal(readConfig('?debug=sure').debug, DEFAULTS.debug);
   });
 
+  // Two of the section switches ship on. A default read as false would quietly drop a
+  // section from every link that does not mention it, which is invisible until a stream
+  // ends with no "Moderated by" in the roll.
+  await t.test('the sections that ship on are on when the link says nothing', () => {
+    const c = readConfig('');
+    assert.equal(c.mods, true);
+    assert.equal(c.streaks, true);
+    assert.equal(c.vips, false);
+    assert.equal(c.firsts, false);
+  });
+
+  await t.test('every section switch reads both ways', () => {
+    for (const key of ['mods', 'streaks', 'vips', 'firsts']) {
+      assert.equal(readConfig(`?${key}=on`)[key], true, key);
+      assert.equal(readConfig(`?${key}=off`)[key], false, key);
+      assert.equal(readConfig(`?${key}=maybe`)[key], DEFAULTS[key], key);
+    }
+  });
+
   await t.test('columns stay within what fits on a 16:9 source', () => {
     assert.equal(readConfig('?columns=99').columns, 6);
     assert.equal(readConfig('?columns=0').columns, 1);
