@@ -1,0 +1,146 @@
+# Rolls the credits in a real browser on every change to them, and puts the result in the
+# pull request.
+#
+# The reel is the part of this project that a diff does not show. `npm test` covers who
+# ends up in the credits; nothing but looking covers whether they are readable, whether a
+# section fell into one lonely column, or whether the roll now takes four minutes. So CI
+# looks, and pastes what it saw.
+
+name: Credits demo
+
+on:
+  pull_request:
+    paths:
+      - credits.html
+      - src/**
+      - tools/**
+      - .github/workflows/demo.yml
+  workflow_dispatch:
+
+# One demo at a time, repo-wide. The images all land on a single branch, so two runs
+# publishing at once would race; queueing them is simpler than merging them, and these
+# runs are a couple of minutes each. Not cancel-in-progress: that would cancel another
+# pull request's run, not an earlier one of this pull request's.
+concurrency:
+  group: credits-demo
+  cancel-in-progress: false
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    env:
+      # A pull request from a fork gets a read-only token, so it cannot publish images or
+      # comment. It still renders the reel -- a crash in the overlay fails the run either
+      # way -- and the artifact is there to download.
+      CAN_PUBLISH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+      DEMO_BRANCH: ci-demo
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test
+        run: npm test
+
+      # The site has no dependencies and no build step, and it stays that way: Playwright
+      # is installed without being saved, so nothing about the deployed files changes.
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Render the credits
+        id: capture
+        continue-on-error: true
+        run: node tools/capture-demo.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: credits-demo
+          path: demo-out/
+          if-no-files-found: warn
+
+      - name: Publish the images
+        if: env.CAN_PUBLISH == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          dest="pr-${PR}/${SHA}"
+
+          work="$(mktemp -d)"
+          cd "$work"
+          git init -q -b "$DEMO_BRANCH"
+          git remote add origin "$remote"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Carry forward what is already on the branch, so publishing this pull request's
+          # images does not delete another one's.
+          if git fetch -q --depth 1 origin "$DEMO_BRANCH" 2>/dev/null; then
+            git checkout -q FETCH_HEAD -- . 2>/dev/null || true
+          fi
+
+          # This pull request's older captures go: the comment only ever points at the
+          # newest, and the sha in the path means nothing else links to them either.
+          rm -rf "pr-${PR}"
+          mkdir -p "$dest"
+          cp "$GITHUB_WORKSPACE"/demo-out/*.png "$GITHUB_WORKSPACE"/demo-out/demo.json "$dest/"
+
+          cat > README.md <<'EOF'
+          # ci-demo
+
+          Generated images only. Every pull request that touches the credits gets its reel
+          rendered by `.github/workflows/demo.yml` and the pictures pushed here, so the
+          pull request can show them inline.
+
+          Nothing here is source and nothing reads it back. The branch is force-pushed as a
+          single commit each time, so it never accumulates history; delete it and the next
+          run makes it again.
+          EOF
+
+          git add -A
+          git commit -q -m "Credits demo for #${PR} (${SHA})"
+          # One root commit, forced: the old images are the only history there was, and
+          # keeping them would grow the repository by a couple of megabytes per push.
+          git push -q --force origin "HEAD:${DEMO_BRANCH}"
+
+      - name: Write the comment
+        if: env.CAN_PUBLISH == 'true'
+        env:
+          DEMO_BASE_URL: https://raw.githubusercontent.com/${{ github.repository }}/${{ env.DEMO_BRANCH }}/pr-${{ github.event.pull_request.number }}/${{ github.event.pull_request.head.sha }}
+        run: node tools/demo-comment.mjs > /dev/null
+
+      - name: Post the comment
+        if: env.CAN_PUBLISH == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const body = fs.readFileSync('demo-out/comment.md', 'utf8');
+            const marker = '<!-- credits-demo -->';
+            const issue = { owner: context.repo.owner, repo: context.repo.repo, issue_number: context.payload.pull_request.number };
+
+            // Edited in place rather than added to, so a pull request with ten pushes has
+            // one demo comment showing the current one, not ten showing its history.
+            const existing = await github.paginate(github.rest.issues.listComments, { ...issue, per_page: 100 });
+            const mine = existing.find((c) => c.body.includes(marker));
+
+            if (mine) await github.rest.issues.updateComment({ ...issue, comment_id: mine.id, body });
+            else await github.rest.issues.createComment({ ...issue, body });
+
+      - name: Fail if the overlay errored
+        if: steps.capture.outcome == 'failure'
+        run: |
+          echo "The overlay threw while rolling — see the demo comment or the log above."
+          exit 1
