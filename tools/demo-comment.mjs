@@ -19,6 +19,11 @@ const MARKER = '<!-- credits-demo -->';
 
 const src = (file) => `${BASE.replace(/\/$/, '')}/${file}`;
 
+// GitHub renders a comment left-aligned in a very wide column, which leaves a 420px still
+// pinned to one edge with a field of nothing beside it. `align` on a block element is one
+// of the few layout attributes the comment sanitizer keeps, so it is how this centres.
+const middle = (...html) => ['<div align="center">', '', ...html, '', '</div>', ''];
+
 function summary(variant) {
   return [
     `${variant.names} names`,
@@ -33,11 +38,12 @@ const lines = [MARKER, '## 🎬 Credits demo', ''];
 
 if (report.roll) {
   lines.push(
-    `<img src="${src(report.roll.file)}" width="640" alt="The credits rolling">`,
-    '',
-    `<sub>The whole ${report.roll.seconds}s roll, ${report.roll.frames} frames at ${report.roll.fps}fps.` +
-      ' Real overlay, headless Chromium, the built-in demo roster.</sub>',
-    '',
+    ...middle(
+      `<img src="${src(report.roll.file)}" width="640" alt="The credits rolling">`,
+      '',
+      `<sub>The whole ${report.roll.seconds}s roll, ${report.roll.frames} frames at ${report.roll.fps}fps.` +
+        ' Real overlay, headless Chromium, the built-in demo roster.</sub>',
+    ),
   );
 }
 
@@ -53,10 +59,11 @@ lines.push(
   // the full size for anything closer than that.
   `### ${first.label}`,
   '',
-  `<sub>${summary(first)} · <code>${first.url}</code></sub>`,
-  '',
-  `<img src="${src(first.file)}" width="420" alt="${first.label}">`,
-  '',
+  ...middle(
+    `<sub>${summary(first)} · <code>${first.url}</code></sub>`,
+    '',
+    `<img src="${src(first.file)}" width="420" alt="${first.label}">`,
+  ),
 );
 
 for (const variant of rest) {
@@ -64,10 +71,11 @@ for (const variant of rest) {
     '<details>',
     `<summary><b>${variant.label}</b> — ${summary(variant)}</summary>`,
     '',
-    `<sub><code>${variant.url}</code></sub>`,
-    '',
-    `<img src="${src(variant.file)}" width="420" alt="${variant.label}">`,
-    '',
+    ...middle(
+      `<sub><code>${variant.url}</code></sub>`,
+      '',
+      `<img src="${src(variant.file)}" width="420" alt="${variant.label}">`,
+    ),
     '</details>',
     '',
   );

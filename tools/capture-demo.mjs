@@ -57,8 +57,18 @@ const STILL = { width: 1920, height: 1080 };
 // The roll is captured small: the layout is identical at any viewport (it is all `vh`
 // and `vw`), and a 1920-wide animation is megabytes nobody loads.
 const MOTION = { width: 640, height: 360 };
-const FRAMES = 72;
-const FPS = 12;
+// The reel sweeps a fixed distance past the frame, so the frame count is really a choice
+// about how far it jumps between frames -- 909px over 72 frames is a 13px lurch, which
+// reads as a slideshow of a scroll rather than a scroll. Halving the step and doubling the
+// rate keeps the animation the same six seconds and makes it move.
+//
+// Upwards from here is bounded by bytes, not by taste: the frames are full-frame RGB (a
+// vertical scroll changes nearly every pixel, so nothing about APNG's per-frame deltas
+// helps) and cost ~30KB each whatever they contain. 144 lands around 4MB, and GitHub's
+// image proxy stops fetching a few megabytes above that -- an animation it refuses to
+// serve is worse than a slightly steppy one.
+const FRAMES = 144;
+const FPS = 24;
 // The reel starts fully below the frame and ends fully above it, and the stage fades its
 // top and bottom out, so a roll opens and closes on an empty screen with a dim band
 // either side of the part worth watching. The animation is trimmed to run from the title
