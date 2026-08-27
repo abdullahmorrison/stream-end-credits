@@ -5,6 +5,8 @@
 // deciding *who ends up in the reel* is roster.js's job, and keeping this side pure is
 // what makes every message shape testable from a single string.
 
+import { toDonation, DONATION_BOTS } from './donations.js';
+
 // Twitch's login for a gift sub given anonymously. There is nobody to thank, so it is
 // never credited as a gifter.
 const ANON_GIFTER = 'ananonymousgifter';
@@ -30,6 +32,15 @@ const BOTS = new Set([
   'deepbot',
   'ankhbot',
 ]);
+
+/**
+ * A chat bot rather than a person, for the badge-derived sections. Donation bots count:
+ * a streamer's own announcement relay is usually modded, and `donationBots` is where its
+ * login was already given.
+ */
+function isBot(login, donationBots = []) {
+  return BOTS.has(login) || DONATION_BOTS.has(login) || donationBots.includes(login);
+}
 
 const TIERS = { Prime: 'Prime', 1000: 'Tier 1', 2000: 'Tier 2', 3000: 'Tier 3' };
 
@@ -64,16 +75,25 @@ function parseBadges(value) {
  * Credits from one parsed line. `[]` for anything that earns nobody a mention.
  *
  * Each credit is `{ type, login, name, ... }` where type is one of:
- *   raid | unraid | sub | resub | gift | cheer | streak | first | vip | mod
+ *   raid | unraid | sub | resub | gift | cheer | tip | charity | streak | first | vip | mod
+ *
+ * `donationBots` are extra bot logins whose announcements are read as donations, on top
+ * of the services donations.js already knows.
  */
-export function toCredits(line) {
+export function toCredits(line, { donationBots = [] } = {}) {
   if (!line) return [];
-  return line.kind === 'usernotice' ? fromNotice(line) : fromChat(line);
+  return line.kind === 'usernotice' ? fromNotice(line) : fromChat(line, donationBots);
 }
 
-function fromChat({ login, displayName, tags }) {
+function fromChat({ login, displayName, tags, text }, donationBots = []) {
   const out = [];
   const who = person(login, displayName);
+
+  // Donations are the one credit that comes out of a message body rather than a tag,
+  // because Twitch has no event for money that did not go through Twitch. The credit
+  // goes to the donor named in the announcement, never to the bot that posted it.
+  const donation = toDonation(who.login, text, donationBots);
+  if (donation) out.push(donation);
 
   const bits = count(tags.bits, 0);
   if (bits > 0) out.push({ type: 'cheer', ...who, bits });
@@ -89,7 +109,7 @@ function fromChat({ login, displayName, tags }) {
   const badges = parseBadges(tags.badges);
   // Nobody is a guest at their own stream, and the broadcaster's badge always outranks
   // the moderator one they implicitly hold.
-  if (!badges.has('broadcaster') && who.login && !BOTS.has(who.login)) {
+  if (!badges.has('broadcaster') && who.login && !isBot(who.login, donationBots)) {
     // Both the badge and the standalone tag are read: the badge is what shows in chat,
     // the tag is what Twitch documents, and they have not always agreed.
     if (badges.has('moderator') || tags.mod === '1') out.push({ type: 'mod', ...who });
@@ -184,4 +204,4 @@ function fromNotice({ login, displayName, tags }) {
   }
 }
 
-export { ANON_GIFTER, TIERS, BOTS, parseBadges };
+export { ANON_GIFTER, TIERS, BOTS, parseBadges, isBot };

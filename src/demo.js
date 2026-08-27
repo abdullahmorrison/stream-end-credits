@@ -48,6 +48,32 @@ export function demoCredits() {
     out.push({ type: 'cheer', login: name.toLowerCase(), name, bits: [1000, 500, 420, 100, 69, 50][i] });
   }
 
+  // Donations, as the bots announce them: whole amounts, awkward ones, a second
+  // donation from somebody who already gave, and a currency written as a code rather
+  // than a symbol -- which is the case that decides whether the detail column fits.
+  for (const [i, name] of pick(NAMES.slice(8), 4).entries()) {
+    out.push({
+      type: 'tip',
+      login: name.toLowerCase(),
+      name,
+      amount: [50, 25.5, 5, 3][i],
+      currency: '$',
+    });
+  }
+  out.push({ type: 'tip', login: 'nia', name: 'nia', amount: 12, currency: '$' });
+  out.push({ type: 'tip', login: 'sedge', name: 'sedge', amount: 200, currency: 'SEK' });
+
+  for (const [i, name] of pick(NAMES.slice(24), 3).entries()) {
+    out.push({
+      type: 'charity',
+      login: name.toLowerCase(),
+      name,
+      amount: [100, 40, 7.5][i],
+      currency: '$',
+      cause: 'Extra Life',
+    });
+  }
+
   for (const name of pick(NAMES.slice(32), 6)) {
     out.push({ type: 'first', login: name.toLowerCase(), name });
   }
@@ -79,12 +105,14 @@ export function fakeCredit(n) {
     { type: 'resub', login, name, months: 12 },
     { type: 'gift', login, name, gifts: 3 },
     { type: 'cheer', login, name, bits: 250 },
+    { type: 'tip', login, name, amount: 15, currency: '$' },
+    { type: 'charity', login, name, amount: 20, currency: '$', cause: 'Extra Life' },
     { type: 'raid', login, name, viewers: 77 },
     { type: 'first', login, name },
     { type: 'streak', login, name, streak: 9 },
     { type: 'vip', login, name },
     { type: 'mod', login, name },
-  ][n % 9];
+  ][n % 11];
 }
 
 export { NAMES };

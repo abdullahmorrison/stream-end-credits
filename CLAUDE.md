@@ -36,7 +36,7 @@ through" is not a crash and not visible in any log.
 
 Four files, all deliberately cheap:
 
-- `test/events.test.mjs` — real IRC lines in, credits out
+- `test/events.test.mjs` — real IRC lines in, credits out, donation-bot messages included
 - `test/roster.test.mjs` — dedupe, gift bombs, sections, session persistence
 - `test/trigger.test.mjs` — `nextAction`
 - `test/config.test.mjs` — URL settings, clamps, normalization
@@ -84,6 +84,25 @@ Two things about it are load-bearing:
   reel actually uses, and why the animation can be 360 frames instead of 72. Too few and
   the reel lurches; past ~4MB GitHub's image proxy stops serving it at all.
 
+## Donations are the one credit read from a message body
+
+Twitch has no donation event -- money that did not go through Twitch never reaches the
+tags everything else is built on, the same way follows do not. `donations.js` reads the
+line the donation bot posts in chat instead, which makes it the only part of the overlay
+that can be defeated by somebody editing a template: no match, no credit, no error.
+
+Two rules hold it together and neither is negotiable. **Only known donation bots are
+read** -- there is no permission model here, so without that anybody could type themselves
+into the credits with "I just donated $50"; `donationBots=` is how a streamer adds their
+own relay. **The donor is the name the bot leads with**, so a name inside the donor's
+attached message can never be credited instead, and the cause is only ever the words
+directly after the amount ("$25 to Extra Life") for the same reason.
+
+Amounts are never converted between currencies: a wrong rate on screen under somebody's
+name is worse than the code the bot already wrote. Add a pattern when a real bot's line
+does not match; that is a missing thank-you, which is exactly the silent, user-facing
+failure the test rule above is about.
+
 ## Settings live in the URL
 
 Every setting is a query param on the browser-source URL, parsed in `src/config.js`, so
@@ -101,11 +120,12 @@ the same.
 ## Layers
 
 ```
-irc.js      sockets and IRC envelopes; knows nothing about subs
-events.js   one line -> credits; pure, no state
-roster.js   who ends up in the reel; no timers, no DOM
-obs.js      the scene trigger; nextAction is pure
-credits.js  the reel; the only file that touches layout
+irc.js        sockets and IRC envelopes; knows nothing about subs
+events.js     one line -> credits; pure, no state
+donations.js  a donation bot's chat message -> a donation credit; pure, no state
+roster.js     who ends up in the reel; no timers, no DOM
+obs.js        the scene trigger; nextAction is pure
+credits.js    the reel; the only file that touches layout
 ```
 
 Keep that order. The event layer is pluggable so a follow source (EventSub, OAuth) could

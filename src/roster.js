@@ -23,14 +23,35 @@ const SECTIONS = [
   { id: 'resub', title: 'Resubs', pick: (e) => e.months > 0, by: 'months' },
   { id: 'gift', title: 'Gifted subs', pick: (e) => e.gifts > 0, by: 'gifts' },
   { id: 'cheer', title: 'Cheered', pick: (e) => e.bits > 0, by: 'bits' },
+  // Both donation sections answer to one switch: they are the same money arriving
+  // through the same bot, and a streamer who does not want amounts on screen does not
+  // want half of them on screen.
+  { id: 'tip', title: 'Donations', pick: (e) => e.tips > 0, by: 'tips', flag: 'donations', on: true },
+  { id: 'charity', title: 'For charity', pick: (e) => e.charity > 0, by: 'charity', flag: 'donations', on: true },
   { id: 'streak', title: 'Watch streaks', pick: (e) => e.streak > 0, by: 'streak', flag: 'streaks', on: true },
   { id: 'first', title: 'First time in chat', pick: (e) => e.first, by: 'name', flag: 'firsts', on: false },
   { id: 'vip', title: 'VIPs', pick: (e) => e.vip, by: 'name', flag: 'vips', on: false },
   { id: 'mod', title: 'Moderated by', pick: (e) => e.mod, by: 'name', flag: 'mods', on: true },
 ];
 
+/**
+ * An amount as the bot wrote it. A symbol goes in front of the number and a three-letter
+ * code after it, which is how both are read in the first place.
+ *
+ * Nothing is converted between currencies: a channel takes donations in one, and putting
+ * a made-up exchange rate on screen would be worse than showing the code the donor
+ * actually paid in.
+ */
+function money(amount, currency) {
+  const n = Number.isInteger(amount) ? `${amount}` : amount.toFixed(2);
+  if (!currency) return n;
+  return currency.length === 1 ? `${currency}${n}` : `${n} ${currency}`;
+}
+
 const DETAIL = {
   viewers: (e) => `${e.viewers}`,
+  tips: (e) => money(e.tips, e.tipCurrency),
+  charity: (e) => money(e.charity, e.charityCurrency),
   gifts: (e) => `×${e.gifts}`,
   bits: (e) => `${e.bits}`,
   months: (e) => `${e.months} mo`,
@@ -47,6 +68,13 @@ function blank(login, name) {
     months: 0,
     gifts: 0,
     bits: 0,
+    // Donated totals, with the currency they were announced in. Two people donating in
+    // two currencies is ordinary; one person doing it is rare enough that their total
+    // carries whichever they used first rather than becoming two lines in the reel.
+    tips: 0,
+    tipCurrency: '',
+    charity: 0,
+    charityCurrency: '',
     streak: 0,
     first: false,
     vip: false,
@@ -138,6 +166,17 @@ export class Roster {
       case 'cheer':
         e.bits += credit.bits || 0;
         break;
+      case 'tip':
+      case 'charity': {
+        // Rounded back to whole cents at every step: 5.10 + 2.20 is 7.300000000000001 in
+        // binary floating point, and a donation total is the last thing that should
+        // arrive on screen with a tail of digits on it.
+        const field = type === 'tip' ? 'tips' : 'charity';
+        const unit = type === 'tip' ? 'tipCurrency' : 'charityCurrency';
+        e[field] = Math.round((e[field] + (credit.amount || 0)) * 100) / 100;
+        if (credit.currency && !e[unit]) e[unit] = credit.currency;
+        break;
+      }
       case 'streak':
         // Twitch sends the milestone once, but a reconnect can replay it. Keeping the
         // larger number means a re-delivered older milestone cannot walk it backwards.

@@ -7,8 +7,9 @@ Thank everyone who showed up, as film credits, at the end of your stream.
 </p>
 
 The overlay watches your chat all stream and collects everyone who subscribed, gifted a
-sub, raided you or cheered. Switch to your ending scene and the credits roll. Switch away
-and they stop. Nothing is typed in chat.
+sub, raided you, cheered or donated — including donations to a charity fundraiser. Switch
+to your ending scene and the credits roll. Switch away and they stop. Nothing is typed in
+chat.
 
 ## Setup
 
@@ -43,6 +44,8 @@ reports scene *changes*, not the current scene.
 | Resubs | Returning subscribers, with their month count |
 | Gifted subs | Gifters, with how many they gave |
 | Cheered | Bits, added up per person |
+| Donations | Tips your donation bot announced, added up per person |
+| For charity | Donations to a named cause or fundraiser |
 | First time in chat | Optional (`firsts=on`) |
 
 Empty sections are left out. **Follows are not included** — they are the one event Twitch
@@ -63,6 +66,8 @@ All settings are URL params; the setup page writes them for you.
 | `columns` | `3` | Columns of names. Drops for a short list |
 | `align` | `center` | How names line up in their columns — `left`, `right` |
 | `firsts` | `off` | Include first-time chatters |
+| `donations` | `on` | Include donations and charity donations |
+| `donationBots` | *(none)* | Extra bot logins to read donations from, comma-separated |
 | `sessionHours` | `12` | How old a stored roster may be before it is discarded |
 | `backdrop` | `0` | Dim behind the credits, `0`–`1` |
 | `debug` | `off` | Status panel plus keyboard tests |
@@ -84,6 +89,18 @@ load, which is what makes the local server and the setup preview work.
 The roll is DOM and CSS. The scroll runs on `requestAnimationFrame` rather than a CSS
 animation, because the distance is not known until the reel is measured and it has to stop
 cleanly when the scene changes. The loop does not run when nothing is rolling.
+
+**Donations are read out of your bot's chat message.** Twitch has no donation event —
+money that did not go through Twitch never reaches the IRC tags everything else here comes
+from. What does arrive is the line StreamLabs, StreamElements, Ko-fi, Muxy,
+DonationAlerts, Tiltify or Extra Life post in chat, so that is what is parsed. Only those
+bots are read: otherwise anybody could type themselves into the credits with "I just
+donated $50". Using something else, or a rewritten template? Add its chat name with
+`donationBots=yourbot`, and check the reel with `debug=on` before you rely on it — an
+announcement no pattern matches is a donation nobody sees, and nothing errors. Amounts are
+shown in the currency the bot wrote them in and never converted. A donation naming a cause
+("$25 to Extra Life") rolls under **For charity**; anything through Tiltify or Extra Life
+counts as charity whether or not the line names one.
 
 **Gift bombs are announced twice** — once as `submysterygift` with the real total, then as
 one `subgift` per recipient from the same login. Counting both doubles the gifter's number

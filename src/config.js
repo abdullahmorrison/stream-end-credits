@@ -21,6 +21,9 @@ const MAX_DURATION = 900;
 const MIN_SESSION_HOURS = 1;
 const MAX_SESSION_HOURS = 48;
 
+// How many extra donation-bot logins a link may carry. See `parseBots`.
+const MAX_DONATION_BOTS = 8;
+
 const DEFAULTS = {
   channel: '',
   title: 'Thank you for watching',
@@ -39,6 +42,14 @@ const DEFAULTS = {
   // VIPs off: plenty of channels hand the badge out for reasons that have nothing to do
   // with the stream being thanked, so this one is asked for rather than assumed.
   vips: false,
+  // Donations announced in chat by a tip or fundraiser bot, and charity donations with
+  // them. On, like the other sections that thank somebody who spent real money -- and a
+  // channel with no donation bot in it collects nothing either way, so there is nothing
+  // to turn off there.
+  donations: true,
+  // Extra bot logins whose announcements are read as donations, for a service
+  // donations.js does not know or a streamer's own relay. See src/donations.js.
+  donationBots: [],
   // Everyone who said something for the first time. Off by default: on a big channel
   // this category is longer than all the others put together. Turn it on with
   // `firsts=on`, or hand someone a setup link that already has it on.
@@ -111,6 +122,23 @@ export function clampSessionHours(value, fallback = DEFAULTS.sessionHours) {
   return int(value, fallback, MIN_SESSION_HOURS, MAX_SESSION_HOURS);
 }
 
+/**
+ * Bot logins from a comma-separated list: `donationBots=tipsbot,@MyRelay` is
+ * `['tipsbot', 'myrelay']`. Normalized the same way a channel is, because it is compared
+ * against the login on an incoming line and one stray capital would silently read no
+ * donations at all.
+ *
+ * Capped rather than unbounded: this is matched against every chat message, and a link
+ * carrying a thousand logins is a mistake or a joke, not a setup.
+ */
+export function parseBots(value, limit = MAX_DONATION_BOTS) {
+  return (value || '')
+    .split(',')
+    .map((name) => normalizeChannel(name.replace(/^@/, '')))
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
 export function readConfig(search = '') {
   const q = new URLSearchParams(search);
   const align = (q.get('align') || '').trim().toLowerCase();
@@ -129,6 +157,8 @@ export function readConfig(search = '') {
     streaks: flag(q.get('streaks'), DEFAULTS.streaks),
     vips: flag(q.get('vips'), DEFAULTS.vips),
     firsts: flag(q.get('firsts'), DEFAULTS.firsts),
+    donations: flag(q.get('donations'), DEFAULTS.donations),
+    donationBots: parseBots(q.get('donationBots')),
     sessionHours: clampSessionHours(q.get('sessionHours')),
     backdrop: float(q.get('backdrop'), DEFAULTS.backdrop, 0, 1),
     debug: flag(q.get('debug'), DEFAULTS.debug),
@@ -147,4 +177,5 @@ export {
   MAX_DURATION,
   MIN_SESSION_HOURS,
   MAX_SESSION_HOURS,
+  MAX_DONATION_BOTS,
 };

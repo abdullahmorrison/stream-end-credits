@@ -7,7 +7,18 @@ import assert from 'node:assert/strict';
 import { parseLine, parseTags } from '../src/irc.js';
 import { toCredits } from '../src/events.js';
 
-const credits = (line) => toCredits(parseLine(line));
+const credits = (line, options) => toCredits(parseLine(line), options);
+
+/**
+ * A donation bot's announcement, as an ordinary chat message -- which is all a donation
+ * ever is on Twitch. `bot` is the login it was posted from, modded the way these bots
+ * are in most channels; `mod: false` posts the same words as an ordinary viewer.
+ */
+const announcement = (bot, text, { mod = true } = {}) =>
+  `@badge-info=;badges=${mod ? 'moderator/1' : ''};color=;display-name=${bot};emotes=;` +
+  `first-msg=0;id=1;mod=${mod ? 1 : 0};room-id=1;subscriber=0;tmi-sent-ts=1;turbo=0;` +
+  `user-id=2;user-type=${mod ? 'mod' : ''} ` +
+  `:${bot}!${bot}@${bot}.tmi.twitch.tv PRIVMSG #dallas :${text}`;
 
 const SUB =
   '@badge-info=;badges=subscriber/0;color=;display-name=Nia;emotes=;id=1;login=nia;mod=0;' +
@@ -247,6 +258,131 @@ test('watch streaks', async (t) => {
 
   await t.test('a streak with no length is ignored', () => {
     assert.deepEqual(credits(MILESTONE.replace('msg-param-value=12', 'msg-param-value=0')), []);
+  });
+});
+
+// Donations are the one credit read out of a message body rather than a tag, because
+// Twitch has no event for money that did not go through Twitch. Every line here is a
+// shape a real bot posts: a template that stops matching is a stream's worth of
+// donations quietly missing from the reel, with nothing anywhere to say so.
+test('donations', async (t) => {
+  await t.test('a tip credits the donor, not the bot that announced it', () => {
+    assert.deepEqual(credits(announcement('streamlabs', 'Kaylee just donated $5.00!')), [
+      { type: 'tip', login: 'kaylee', name: 'Kaylee', amount: 5, currency: '$' },
+    ]);
+  });
+
+  await t.test('the shapes the usual bots post', () => {
+    const lines = [
+      ['streamelements', 'nia just tipped $12.34 PogChamp', '$'],
+      ['streamelements', 'nia tipped 12.34 USD', 'USD'],
+      ['kofistreambot', 'New Ko-fi from nia: $12.34', '$'],
+      ['kofistreambot', 'nia just supported with $12.34', '$'],
+      ['streamlabs', 'Thanks nia for the $12.34 donation!', '$'],
+      ['muxy', 'nia donated $12.34: have a good one', '$'],
+    ];
+
+    for (const [bot, text, currency] of lines) {
+      assert.deepEqual(
+        credits(announcement(bot, text)),
+        [{ type: 'tip', login: 'nia', name: 'nia', amount: 12.34, currency }],
+        text,
+      );
+    }
+  });
+
+  // Anybody can type "I just donated $50". There is no permission model here to check
+  // it against, so the only thing standing between that and a place in the credits is
+  // that the message did not come from a donation bot.
+  await t.test('a viewer claiming to have donated earns nothing', () => {
+    assert.deepEqual(credits(announcement('sam', 'i just donated $500 lol', { mod: false })), []);
+  });
+
+  await t.test('a bot that is not a donation bot is not read for donations', () => {
+    assert.deepEqual(credits(announcement('nightbot', 'mira just donated $9')), []);
+    assert.deepEqual(credits(announcement('moobot', 'mira just donated $9')), []);
+  });
+
+  await t.test('donationBots adds one, for a service or a relay this does not know', () => {
+    assert.deepEqual(
+      credits(announcement('mytipbot', 'mira just donated $9'), { donationBots: ['mytipbot'] }),
+      [{ type: 'tip', login: 'mira', name: 'mira', amount: 9, currency: '$' }],
+    );
+  });
+
+  // Donation bots are modded in most channels. Crediting one under "Moderated by" for
+  // announcing somebody else's money is the mis-credit this guard exists for.
+  await t.test('a donation bot is not thanked for moderating', () => {
+    const both = credits(announcement('mytipbot', 'mira just donated $9'), {
+      donationBots: ['mytipbot'],
+    });
+    assert.deepEqual(both.map((c) => c.type), ['tip']);
+  });
+
+  await t.test('nothing is read out of an ordinary bot message', () => {
+    for (const text of ['Type !tip to support the stream', 'Follow on twitter', 'thanks for watching!']) {
+      assert.deepEqual(credits(announcement('streamlabs', text)), [], text);
+    }
+  });
+
+  await t.test('an anonymous donor is credited to nobody, like an anonymous gifter', () => {
+    for (const who of ['Anonymous', 'anon', 'Anonymous Donor']) {
+      assert.deepEqual(credits(announcement('streamlabs', `${who} just donated $5.00`)), [], who);
+    }
+  });
+
+  await t.test('both ways of writing a decimal, and thousands either way round', () => {
+    const amounts = [
+      ['$5', 5],
+      ['$1,250.00', 1250],
+      ['€1.250,00', 1250],
+      ['€7,50', 7.5],
+      ['500 JPY', 500],
+    ];
+    for (const [written, expected] of amounts) {
+      const [credit] = credits(announcement('streamlabs', `nia just donated ${written}`));
+      assert.equal(credit?.amount, expected, written);
+    }
+  });
+
+  await t.test('something that is not an amount is not a donation', () => {
+    for (const text of ['nia just donated $0', 'nia just donated 1.2.3', 'nia just donated a lot']) {
+      assert.deepEqual(credits(announcement('streamlabs', text)), [], text);
+    }
+  });
+});
+
+test('charity donations', async (t) => {
+  await t.test('a named cause makes it charity, through an ordinary tip bot', () => {
+    assert.deepEqual(credits(announcement('streamlabs', 'Pip donated $25.00 to Extra Life!')), [
+      {
+        type: 'charity',
+        login: 'pip',
+        name: 'Pip',
+        amount: 25,
+        currency: '$',
+        cause: 'Extra Life',
+      },
+    ]);
+  });
+
+  // Tiltify and Extra Life exist to run fundraisers. Nothing announced through them is a
+  // tip, whether or not the line names what it was for.
+  await t.test('a fundraiser bot is charity even with no cause in the line', () => {
+    assert.deepEqual(credits(announcement('tiltify', 'Pip donated $20.00'))[0].type, 'charity');
+  });
+
+  // "to the stream" is a tip somebody phrased warmly. Reading it as a cause would split
+  // one section into two, both of them wrong.
+  await t.test('donating "to the stream" is still a tip', () => {
+    assert.deepEqual(credits(announcement('streamlabs', 'lex donated $5 to the stream'))[0].type, 'tip');
+  });
+
+  // The cause is only ever the words right after the amount. A donor writing about a
+  // charity in their attached message must not move their tip into the other section.
+  await t.test('a charity named in the donor\'s own message is not a cause', () => {
+    const line = 'iris just donated $8.00: I gave to Extra Life as well';
+    assert.deepEqual(credits(announcement('streamlabs', line))[0].type, 'tip');
   });
 });
 

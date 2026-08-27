@@ -6,7 +6,7 @@
 // box here shows exactly what a 1920×1080 source will, and there is no second rendering
 // path to keep in step with the first.
 
-import { DEFAULTS, readConfig, normalizeChannel, clampSpeed } from './config.js';
+import { DEFAULTS, readConfig, normalizeChannel, clampSpeed, parseBots } from './config.js';
 import { TwitchChat } from './irc.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,11 +17,13 @@ const speedEl = $('speed');
 const columnsEl = $('columns');
 const alignEl = $('align');
 const backdropEl = $('backdrop');
+const botsEl = $('donationBots');
 
 // The section switches, keyed by the config name each one writes. Kept as a map rather
-// than four variables so building the link, prefilling and wiring up the listeners are
+// than a variable each so building the link, prefilling and wiring up the listeners are
 // each one loop -- adding a section later is one line here and one checkbox in the HTML.
 const TOGGLES = {
+  donations: $('donations'),
   mods: $('mods'),
   streaks: $('streaks'),
   vips: $('vips'),
@@ -41,6 +43,7 @@ function settings() {
     columns: parseInt(columnsEl.value, 10),
     align: alignEl.value,
     backdrop: parseFloat(backdropEl.value),
+    donationBots: parseBots(botsEl.value),
     ...Object.fromEntries(Object.entries(TOGGLES).map(([key, el]) => [key, el.checked])),
   };
 }
@@ -59,6 +62,9 @@ function overlayUrl(extra = {}) {
   if (s.columns !== DEFAULTS.columns) url.searchParams.set('columns', String(s.columns));
   if (s.align !== DEFAULTS.align) url.searchParams.set('align', s.align);
   if (s.backdrop !== DEFAULTS.backdrop) url.searchParams.set('backdrop', String(s.backdrop));
+  // Normalized through the same parser the overlay reads them with, so what this box
+  // shows and what the link carries cannot drift apart.
+  if (s.donationBots.length) url.searchParams.set('donationBots', s.donationBots.join(','));
   // Written either way rather than only when on: two of these default to on, so a link
   // that only ever said `on` could not turn one off, and any of the defaults flipping
   // later would silently change what an already-pasted link does.
@@ -163,10 +169,12 @@ for (const el of [speedEl, columnsEl, alignEl, backdropEl, ...Object.values(TOGG
     replay();
   });
 }
-for (const el of [channelEl, titleEl]) {
+for (const el of [channelEl, titleEl, botsEl]) {
   el.addEventListener('input', refresh);
 }
 titleEl.addEventListener('change', replay);
+// The bot box deliberately does not reload the preview: the demo roster is made up, so
+// which bot logins are trusted changes nothing about what it shows.
 // On change rather than input: the preview reloads, and doing that per keystroke would
 // restart the roll while somebody is still typing their name.
 channelEl.addEventListener('change', () => {
@@ -206,6 +214,7 @@ selectValue(speedEl, incoming.speed);
 selectValue(columnsEl, incoming.columns);
 selectValue(alignEl, incoming.align);
 selectValue(backdropEl, incoming.backdrop);
+botsEl.value = incoming.donationBots.join(', ');
 for (const [key, el] of Object.entries(TOGGLES)) el.checked = incoming[key];
 
 refresh();

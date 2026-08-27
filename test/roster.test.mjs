@@ -311,17 +311,117 @@ test('section switches', async (t) => {
     r.add({ type: 'resub', login: 'c', name: 'c', months: 2 });
     r.add({ type: 'gift', login: 'd', name: 'd', gifts: 1 });
     r.add({ type: 'cheer', login: 'e', name: 'e', bits: 1 });
+    r.add({ type: 'tip', login: 'f', name: 'f', amount: 5, currency: '$' });
+    r.add({ type: 'charity', login: 'g', name: 'g', amount: 5, currency: '$' });
     assert.deepEqual(ids(r.sections({ vips: true, firsts: true })), [
       'raid',
       'sub',
       'resub',
       'gift',
       'cheer',
+      'tip',
+      'charity',
       'streak',
       'first',
       'vip',
       'mod',
     ]);
+  });
+});
+
+// Money, and the one section whose numbers are read out of a message rather than a tag.
+// A wrong total here is a wrong number on stream under somebody's name.
+test('donations', async (t) => {
+  await t.test('amounts add up, with the currency they were given in', () => {
+    const r = roster();
+    r.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 5.1, currency: '$' });
+    r.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 2.2, currency: '$' });
+    // 5.1 + 2.2 is 7.300000000000001 in binary floating point, and a total with a tail
+    // of digits on it would go straight to screen.
+    assert.deepEqual(r.sections().find((s) => s.id === 'tip').names, [
+      { name: 'Nia', detail: '$7.30' },
+    ]);
+  });
+
+  await t.test('a whole amount is not written with pennies', () => {
+    const r = roster();
+    r.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 25, currency: '$' });
+    assert.equal(r.sections().find((s) => s.id === 'tip').names[0].detail, '$25');
+  });
+
+  await t.test('a currency code goes after the number, a symbol in front of it', () => {
+    const r = roster();
+    r.add({ type: 'tip', login: 'sedge', name: 'Sedge', amount: 200, currency: 'SEK' });
+    r.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 300, currency: '£' });
+    assert.deepEqual(r.sections().find((s) => s.id === 'tip').names, [
+      { name: 'Nia', detail: '£300' },
+      { name: 'Sedge', detail: '200 SEK' },
+    ]);
+  });
+
+  await t.test('a tip and a charity donation are separate sections, biggest first', () => {
+    const r = roster();
+    r.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 5, currency: '$' });
+    r.add({ type: 'charity', login: 'nia', name: 'Nia', amount: 40, currency: '$' });
+    r.add({ type: 'charity', login: 'pip', name: 'Pip', amount: 100, currency: '$' });
+    assert.equal(r.size, 2);
+    assert.deepEqual(names(r.sections(), 'tip'), ['Nia']);
+    assert.deepEqual(r.sections().find((s) => s.id === 'charity').names, [
+      { name: 'Pip', detail: '$100' },
+      { name: 'Nia', detail: '$40' },
+    ]);
+  });
+
+  // A donation is announced under the donor's name, and on Twitch that is the login with
+  // capitals on it. The same person subbing and tipping has to be one line in the reel.
+  await t.test('a donor who also subbed is one person, not two', () => {
+    const r = roster();
+    r.add({ type: 'sub', login: 'nia', name: 'Nia' });
+    r.add({ type: 'tip', login: 'nia', name: 'nia', amount: 5, currency: '$' });
+    assert.equal(r.size, 1);
+    assert.deepEqual(ids(r.sections()), ['sub', 'tip']);
+  });
+
+  await t.test('both sections answer to one switch', () => {
+    const r = roster();
+    r.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 5, currency: '$' });
+    r.add({ type: 'charity', login: 'pip', name: 'Pip', amount: 5, currency: '$' });
+    assert.deepEqual(ids(r.sections()), ['tip', 'charity']);
+    assert.deepEqual(ids(r.sections({ donations: false })), []);
+  });
+
+  await t.test('totals survive a reload', () => {
+    const storage = memStorage();
+    const first = roster({ storage });
+    first.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 5, currency: '$' });
+    first.add({ type: 'charity', login: 'pip', name: 'Pip', amount: 20, currency: '$' });
+    first.flush();
+
+    const second = roster({ storage });
+    assert.equal(second.load(), true);
+    second.add({ type: 'tip', login: 'nia', name: 'Nia', amount: 2.5, currency: '$' });
+    assert.deepEqual(second.sections().find((s) => s.id === 'tip').names, [
+      { name: 'Nia', detail: '$7.50' },
+    ]);
+    assert.deepEqual(names(second.sections(), 'charity'), ['Pip']);
+  });
+
+  // A roster written before donations existed has none of these fields. Restoring it has
+  // to leave those people exactly where they were rather than dropping them or putting
+  // them in a section they never earned.
+  await t.test('a roster stored before donations existed still loads', () => {
+    const storage = memStorage();
+    storage.setItem(
+      'stream-end-credits:dallas',
+      JSON.stringify({
+        v: 1,
+        startedAt: Date.now(),
+        entries: [{ login: 'nia', name: 'Nia', sub: true }],
+      }),
+    );
+    const r = roster({ storage });
+    assert.equal(r.load(), true);
+    assert.deepEqual(ids(r.sections()), ['sub']);
   });
 });
 

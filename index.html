@@ -312,6 +312,16 @@
     <p class="help">Which groups get their own heading in the roll.</p>
     <div class="toggles">
       <label class="toggle">
+        <input type="checkbox" id="donations">
+        <span>
+          <span class="t">Donations</span>
+          <span class="d">Tips and charity donations, with the amount, read from what your
+            donation bot posts in chat. StreamLabs, StreamElements, Ko-fi, Muxy,
+            DonationAlerts, Tiltify and Extra Life are recognised. Anything given to a
+            named cause rolls under “For charity”.</span>
+        </span>
+      </label>
+      <label class="toggle">
         <input type="checkbox" id="mods">
         <span>
           <span class="t">Moderated by</span>
@@ -340,8 +350,21 @@
         </span>
       </label>
     </div>
+    <div class="row" style="margin-top:16px">
+      <div>
+        <label for="donationBots">Another bot that announces your donations</label>
+        <input type="text" id="donationBots" placeholder="mytipbot, myotherbot"
+               spellcheck="false" autocomplete="off">
+      </div>
+    </div>
     <p class="note" style="margin-top:16px">
-      All three of these are read out of chat, so they only ever see people who used it.
+      <b>Only for donations:</b> Twitch has no donation event, so the only thing to read
+      is the line your bot posts in chat. If yours is not in the list above — or you
+      rewrote its message — put its chat name in the box and check the preview. Nothing
+      typed by an ordinary viewer is ever counted as a donation.
+    </p>
+    <p class="note" style="margin-top:16px">
+      The rest of these are read out of chat too, so they only ever see people who used it.
       Mods and VIPs are spotted from the badges on their messages — someone who never
       types will not appear. A watch streak shows up only when the viewer taps to share
       it in chat, which they can do once per stream, so expect a short list rather than
@@ -405,6 +428,8 @@
       <tr><td>Resubs</td><td>Returning subscribers, with their month count</td></tr>
       <tr><td>Gifted subs</td><td>Gifters, with how many they gave</td></tr>
       <tr><td>Cheered</td><td>Bits, added up per person</td></tr>
+      <tr><td>Donations</td><td>Tips your donation bot announced, added up per person — on by default</td></tr>
+      <tr><td>For charity</td><td>Donations to a named cause or fundraiser — on by default</td></tr>
       <tr><td>Watch streaks</td><td>Consecutive streams watched, when shared in chat — on by default</td></tr>
       <tr><td>First time in chat</td><td>Only if you ticked it above</td></tr>
       <tr><td>VIPs</td><td>Only if you ticked it above</td></tr>

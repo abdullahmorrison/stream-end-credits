@@ -10,7 +10,9 @@ import {
   clampSpeed,
   clampDuration,
   clampSessionHours,
+  parseBots,
   DEFAULTS,
+  MAX_DONATION_BOTS,
   MIN_SPEED,
   MAX_SPEED,
   MIN_DURATION,
@@ -105,16 +107,34 @@ test('readConfig', async (t) => {
     const c = readConfig('');
     assert.equal(c.mods, true);
     assert.equal(c.streaks, true);
+    assert.equal(c.donations, true);
     assert.equal(c.vips, false);
     assert.equal(c.firsts, false);
   });
 
   await t.test('every section switch reads both ways', () => {
-    for (const key of ['mods', 'streaks', 'vips', 'firsts']) {
+    for (const key of ['mods', 'streaks', 'vips', 'firsts', 'donations']) {
       assert.equal(readConfig(`?${key}=on`)[key], true, key);
       assert.equal(readConfig(`?${key}=off`)[key], false, key);
       assert.equal(readConfig(`?${key}=maybe`)[key], DEFAULTS[key], key);
     }
+  });
+
+  // These are compared against the login on an incoming line, so one stray capital
+  // would read no donations at all for the whole stream and say nothing about it.
+  await t.test('donation bot logins are normalized the way a channel is', () => {
+    assert.deepEqual(parseBots('@TipsBot, my_relay ,#Other'), ['tipsbot', 'my_relay', 'other']);
+    assert.deepEqual(parseBots('  '), []);
+    assert.deepEqual(parseBots(null), []);
+    assert.deepEqual(readConfig('?donationBots=%40TipsBot%2C%2CMyRelay').donationBots, [
+      'tipsbot',
+      'myrelay',
+    ]);
+  });
+
+  await t.test('a link cannot carry an unbounded list of them', () => {
+    const many = Array.from({ length: 50 }, (_, i) => `bot${i}`).join(',');
+    assert.equal(parseBots(many).length, MAX_DONATION_BOTS);
   });
 
   await t.test('columns stay within what fits on a 16:9 source', () => {

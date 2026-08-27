@@ -83,7 +83,9 @@ if (config.channel && !config.demo) {
   });
 
   chat.addEventListener('line', (e) => {
-    for (const credit of toCredits(e.detail)) {
+    // The bot list rides along: a donation is the one credit that has to be recognised
+    // from a message body, and which logins to trust with that is a setting.
+    for (const credit of toCredits(e.detail, { donationBots: config.donationBots })) {
       roster.add(credit);
       credited++;
     }
