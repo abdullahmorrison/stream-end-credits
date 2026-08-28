@@ -77,7 +77,12 @@ Two things about it are load-bearing:
   top of the frame and CI cheerfully publishes an animation of an empty screen.
 - The animation is an APNG, assembled in `tools/apng.mjs` from the frames Playwright
   already produced. The ffmpeg Playwright ships has no gif encoder, so a gif means
-  installing one on every run and quantizing the reel's greys to 256 colours.
+  installing one on every run.
+- Frame count is a readability decision with a byte budget attached, not a knob. A
+  vertical scroll changes nearly every pixel, so nothing saves bytes per frame except
+  fewer colours -- which is why `tools/palette.mjs` indexes the frames to the ~200 the
+  reel actually uses, and why the animation can be 360 frames instead of 72. Too few and
+  the reel lurches; past ~4MB GitHub's image proxy stops serving it at all.
 
 ## Settings live in the URL
 

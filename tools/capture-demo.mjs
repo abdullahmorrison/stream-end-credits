@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { readConfig } from '../src/config.js';
 import { writeApng } from './apng.mjs';
+import { palettize } from './palette.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.resolve(ROOT, process.env.DEMO_OUT || 'demo-out');
@@ -57,18 +58,19 @@ const STILL = { width: 1920, height: 1080 };
 // The roll is captured small: the layout is identical at any viewport (it is all `vh`
 // and `vw`), and a 1920-wide animation is megabytes nobody loads.
 const MOTION = { width: 640, height: 360 };
-// The reel sweeps a fixed distance past the frame, so the frame count is really a choice
-// about how far it jumps between frames -- 909px over 72 frames is a 13px lurch, which
-// reads as a slideshow of a scroll rather than a scroll. Halving the step and doubling the
-// rate keeps the animation the same six seconds and makes it move.
+// The reel sweeps a fixed distance past the frame, so the frame count is really two
+// choices at once: how far the reel lurches between frames, and how long the animation
+// runs. Both were wrong when this was 72 frames at 12fps -- a 13px step, and the whole
+// 42s roll crammed into six seconds, which is seven times the speed anyone will watch it
+// at. 360 frames at 30fps is a 2.5px step over twelve seconds, and it reads as a scroll.
 //
-// Upwards from here is bounded by bytes, not by taste: the frames are full-frame RGB (a
-// vertical scroll changes nearly every pixel, so nothing about APNG's per-frame deltas
-// helps) and cost ~30KB each whatever they contain. 144 lands around 4MB, and GitHub's
-// image proxy stops fetching a few megabytes above that -- an animation it refuses to
-// serve is worse than a slightly steppy one.
-const FRAMES = 144;
-const FPS = 24;
+// The ceiling is bytes. A vertical scroll changes nearly every pixel, so APNG's per-frame
+// deltas save nothing and each frame costs its full size; palettizing them is what makes
+// 360 fit where 144 truecolour frames did. Around 4MB is the practical limit, because
+// GitHub's image proxy gives up somewhere not far above it and an animation it refuses to
+// serve is worse than a choppy one.
+const FRAMES = 360;
+const FPS = 30;
 // The reel starts fully below the frame and ends fully above it, and the stage fades its
 // top and bottom out, so a roll opens and closes on an empty screen with a dim band
 // either side of the part worth watching. The animation is trimmed to run from the title
@@ -287,12 +289,15 @@ async function main() {
     report.errors.push(...failures);
 
     const file = 'roll.png';
+    const colors = await palettize(files);
     const apng = await writeApng(files, path.join(OUT, file), { delay: { num: 1, den: FPS } });
     // The frames are an intermediate, not an output -- but they are the only way to see
     // which frame a bad-looking animation went wrong on, so they can be kept.
     if (!process.env.DEMO_KEEP_FRAMES) await fs.rm(dir, { recursive: true, force: true });
     report.roll = { file, fps: FPS, ...apng, seconds: report.variants[0].seconds };
-    console.log(`roll: ${apng.frames} frames of a ${report.roll.seconds}s roll -> ${file}`);
+    console.log(
+      `roll: ${apng.frames} frames of a ${report.roll.seconds}s roll, ${colors.colors} colours -> ${file}`,
+    );
   } finally {
     await browser.close();
     server.kill();

@@ -3,14 +3,17 @@
 // This exists so the demo needs nothing installed. The obvious way to make an animation
 // out of frames is ffmpeg, but the ffmpeg Playwright ships is built for its own video
 // recording and has no gif encoder at all, so using it means `apt-get install ffmpeg` on
-// every CI run -- a download, a network dependency and a second thing to keep working,
-// for a file format that would then quantize the reel's greys and purples to 256 colours
-// and band the antialiasing on every name.
+// every CI run: a download, a network dependency, and a second thing to keep working.
 //
-// APNG costs about a hundred lines instead, because nothing has to be decoded: an APNG is
-// a PNG whose frames are the same IDAT bytes the encoder already produced, re-tagged. The
-// frames stay lossless and identical to the stills. GitHub renders it inline, and a
-// browser that will not animate it shows frame one, which is a still of the reel.
+// APNG costs about a hundred lines instead, because nothing is decoded here: an APNG is a
+// PNG whose frames are the same IDAT bytes the encoder already produced, re-tagged.
+// GitHub renders it inline, and a browser that will not animate it shows frame one, which
+// is a still of the reel.
+//
+// The frames arrive already palettized (`palette.mjs`). That is a gif-shaped compromise
+// made deliberately and on this project's own terms -- 256 colours the reel actually
+// uses, chosen from the whole roll at once -- because bytes per frame are what decide how
+// many frames there can be, and too few frames is an animation that hurts to watch.
 
 import fs from 'node:fs/promises';
 import zlib from 'node:zlib';
@@ -48,6 +51,8 @@ export async function writeApng(files, out, { delay = { num: 1, den: 12 }, plays
   if (!files.length) throw new Error('no frames');
 
   let header = null;
+  // Undefined until the first frame has been looked at; null once it has and it had none.
+  let palette;
   const frames = [];
 
   for (const file of files) {
@@ -61,7 +66,15 @@ export async function writeApng(files, out, { delay = { num: 1, den: 12 }, plays
     // case to handle -- and a wrong-looking animation is worse than a stopped run.
     if (!header) header = ihdr.body;
     else if (!header.equals(ihdr.body)) throw new Error(`${file} does not match the first frame`);
-    if (parsed.some((c) => c.type === 'PLTE')) throw new Error(`${file} is paletted; only truecolour frames are stitched`);
+
+    // Palette frames are stitched too, and the palette is the animation's, not the
+    // frame's: an APNG has one PLTE for the whole file. `palettize` gives every frame the
+    // same one, so agreeing here is the check that it did.
+    const plte = parsed.find((c) => c.type === 'PLTE')?.body ?? null;
+    if (palette === undefined) palette = plte;
+    else if (Boolean(plte) !== Boolean(palette) || (plte && !palette.equals(plte))) {
+      throw new Error(`${file} has a different palette to the first frame`);
+    }
 
     frames.push(Buffer.concat(idat));
   }
@@ -89,7 +102,9 @@ export async function writeApng(files, out, { delay = { num: 1, den: 12 }, plays
     return chunk('fcTL', body);
   };
 
-  const parts = [SIGNATURE, chunk('IHDR', header), chunk('acTL', actl)];
+  const parts = [SIGNATURE, chunk('IHDR', header)];
+  if (palette) parts.push(chunk('PLTE', palette));
+  parts.push(chunk('acTL', actl));
 
   // The first frame is a plain IDAT: it is the still any reader that ignores the
   // animation chunks will show.
