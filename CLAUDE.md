@@ -55,6 +55,35 @@ The rule: add a test when the failure would be silent and user-facing. The gift-
 double-count is the archetype — the credits still roll, they are just wrong, and nobody
 finds out until it is on stream.
 
+## CI rolls the credits and shows you
+
+`tools/capture-demo.mjs` opens `credits.html?demo=on` in headless Chromium, photographs
+the whole reel and the roll itself, and `.github/workflows/demo.yml` pastes both into the
+pull request. It covers the half of this project the tests deliberately do not: whether
+the thing is *readable*, whether a section fell into one lonely column, whether the roll
+now takes four minutes.
+
+This is not the browser suite CLAUDE.md tells you not to write, and it must not become
+one. It stubs nothing -- it runs the deployed files -- and it asserts nothing except that
+the page did not throw. Its output is pictures for a person to look at. Adding expected
+heights or golden images would rebuild exactly the suite tomatod deleted, one assertion
+at a time.
+
+Two things about it are load-bearing:
+
+- The clock is faked **and paused** (`clock.install` then `clock.pauseAt`). Installed but
+  unpaused, the clock keeps ticking with real time, so the seconds each screenshot spends
+  being encoded go into the roll as well -- and on a slow runner the reel walks off the
+  top of the frame and CI cheerfully publishes an animation of an empty screen.
+- The animation is an APNG, assembled in `tools/apng.mjs` from the frames Playwright
+  already produced. The ffmpeg Playwright ships has no gif encoder, so a gif means
+  installing one on every run.
+- Frame count is a readability decision with a byte budget attached, not a knob. A
+  vertical scroll changes nearly every pixel, so nothing saves bytes per frame except
+  fewer colours -- which is why `tools/palette.mjs` indexes the frames to the ~200 the
+  reel actually uses, and why the animation can be 360 frames instead of 72. Too few and
+  the reel lurches; past ~4MB GitHub's image proxy stops serving it at all.
+
 ## Settings live in the URL
 
 Every setting is a query param on the browser-source URL, parsed in `src/config.js`, so

@@ -106,3 +106,11 @@ http://localhost:4748/credits.html?channel=tenzinniznet&demo=on&debug=on
 With `debug=on`: `R` roll, `C` stop, `F` add a fake credit, `X` reset. The panel also logs
 every `obs*` event your OBS actually sends, which is how to check the event names rather
 than trusting the docs.
+
+Every pull request that touches the reel gets it rendered by CI and posted to the pull
+request as pictures — the whole reel as one tall image, plus the roll as an animation.
+
+```
+npm install —no-save playwright        # not saved: the site keeps its zero dependencies
+node tools/capture-demo.mjs             # -> demo-out/
+```
