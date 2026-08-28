@@ -1,0 +1,132 @@
+{
+  "variants": [
+    {
+      "id": "default",
+      "label": "Default settings",
+      "params": {},
+      "reelHeight": 2660,
+      "viewport": 1080,
+      "columns": [
+        2,
+        3,
+        3,
+        2,
+        3,
+        3,
+        3
+      ],
+      "sections": [
+        {
+          "title": "Raided by",
+          "names": 2
+        },
+        {
+          "title": "New subscribers",
+          "names": 16
+        },
+        {
+          "title": "Resubs",
+          "names": 7
+        },
+        {
+          "title": "Gifted subs",
+          "names": 2
+        },
+        {
+          "title": "Cheered",
+          "names": 6
+        },
+        {
+          "title": "Watch streaks",
+          "names": 5
+        },
+        {
+          "title": "Moderated by",
+          "names": 4
+        }
+      ],
+      "speed": 90,
+      "distance": 3740,
+      "seconds": 41.6,
+      "names": 42,
+      "file": "reel-default.png",
+      "url": "?channel=yourchannel&demo=on"
+    },
+    {
+      "id": "everything",
+      "label": "Two columns, left aligned, every section on",
+      "params": {
+        "columns": "2",
+        "align": "left",
+        "vips": "on",
+        "firsts": "on"
+      },
+      "reelHeight": 3566,
+      "viewport": 1080,
+      "columns": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "sections": [
+        {
+          "title": "Raided by",
+          "names": 2
+        },
+        {
+          "title": "New subscribers",
+          "names": 16
+        },
+        {
+          "title": "Resubs",
+          "names": 7
+        },
+        {
+          "title": "Gifted subs",
+          "names": 2
+        },
+        {
+          "title": "Cheered",
+          "names": 6
+        },
+        {
+          "title": "Watch streaks",
+          "names": 5
+        },
+        {
+          "title": "First time in chat",
+          "names": 6
+        },
+        {
+          "title": "VIPs",
+          "names": 3
+        },
+        {
+          "title": "Moderated by",
+          "names": 4
+        }
+      ],
+      "speed": 90,
+      "distance": 4646,
+      "seconds": 51.6,
+      "names": 51,
+      "file": "reel-everything.png",
+      "url": "?channel=yourchannel&demo=on&columns=2&align=left&vips=on&firsts=on"
+    }
+  ],
+  "roll": {
+    "file": "roll.png",
+    "fps": 30,
+    "width": 640,
+    "height": 360,
+    "frames": 360,
+    "seconds": 41.6
+  },
+  "errors": []
+}
